@@ -1,0 +1,667 @@
+
+```{r}
+library(Seurat)
+Cervthorlumb_neurons <-  readRDS("/Users/roomerb/cervthorlumb_neurons_anno.RDS")
+Cervthorlumb_neurons <- SetIdent(Cervthorlumb_neurons, value = "neurontypes_sub")
+Cervthorlumb_neurons_MN <- subset(Cervthorlumb_neurons, idents = c("PGC-like", "PGC-Sacral", "MN-LMC/HMC/MMC"))
+#rm(Cervthorlumb_neurons)
+DefaultAssay(Cervthorlumb_neurons_MN) <- "RNA"
+Cervthorlumb_neurons_MN <- NormalizeData(Cervthorlumb_neurons_MN)
+Cervthorlumb_neurons_MN <- FindVariableFeatures(Cervthorlumb_neurons_MN, selection.method = "vst", nfeatures = 2000)
+Cervthorlumb_neurons_MN[["percent.mt"]] <- PercentageFeatureSet(Cervthorlumb_neurons_MN, pattern = "^mt-")
+Cervthorlumb_neurons_MN <- ScaleData(Cervthorlumb_neurons_MN, vars.to.regress = c("percent.mt", "nFeature_RNA", "nCount_RNA"))
+DefaultAssay(Cervthorlumb_neurons_MN) <- "integrated"
+Cervthorlumb_neurons_MN <- RunPCA(Cervthorlumb_neurons_MN, features = VariableFeatures(object = Cervthorlumb_neurons_MN), npcs = 180)
+DimHeatmap(Cervthorlumb_neurons_MN, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons_MN, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons_MN, dims = 31:45, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons_MN, dims = 46:60, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons_MN, dims = 61:75, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons_MN, dims = 76:90, cells = 500, balanced = TRUE)
+ElbowPlot(Cervthorlumb_neurons_MN, ndims = 90)
+DefaultAssay(Cervthorlumb_neurons_MN) <- "integrated"
+Cervthorlumb_neurons_MN <- FindNeighbors(Cervthorlumb_neurons_MN, reduction = "pca", dims = 1:21)
+Cervthorlumb_neurons_MN <- FindClusters(Cervthorlumb_neurons_MN, resolution = 0.5)
+Cervthorlumb_neurons_MN <- FindClusters(Cervthorlumb_neurons_MN, resolution = 1)
+Cervthorlumb_neurons_MN <- FindClusters(Cervthorlumb_neurons_MN, resolution = 2)
+Cervthorlumb_neurons_MN <- FindClusters(Cervthorlumb_neurons_MN, resolution = 4)
+Cervthorlumb_neurons_MN <- FindClusters(Cervthorlumb_neurons_MN, resolution = 8)
+Cervthorlumb_neurons_MN <- RunUMAP(Cervthorlumb_neurons_MN, reduction = "pca", dims = 1:21)
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "integrated_snn_res.0.5", label = T)+NoLegend()
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "integrated_snn_res.1", label = T)+NoLegend()
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "integrated_snn_res.2", label = T)+NoLegend()
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "integrated_snn_res.4", label = T)+NoLegend()
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "integrated_snn_res.8", label = T)+NoLegend()
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "segment", label = T)
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "timepoint", label = T)
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "neurontypes_sub", label = T)
+
+### MN subtypes
+### Add to neurontypes_sub later
+Cervthorlumb_neurons_MN$MNtypes <- plyr::mapvalues(
+    x = Cervthorlumb_neurons_MN$integrated_snn_res.4,
+    from = c(20,6,2,5,16,14,4,0,13,1,21,3,7,9,11,17,8,15,10,12,19,18), 
+    to = c("MN-Cranial", "MN-LMC/MMC/HMC", "MN-LMC/MMC/HMC", "MN-LMC/MMC/HMC", "MN-Onuf", "MN-PGC-Sacral", "MN-PGC-0", "MN-PGC-1", "MN-PGC-2", "MN-PGC-2", "MN-PGC-2", "null", "MN-PGC-2", "MN-PGC-1", "MN-PGC-0", "MN-PGC-2", "MN-PGC-2","MN-PGC-2", "MN-PGC-2", "MN-PGC-2", "MN-PGC-2", "MN-PGC-2"))
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "neurontypes_sub", label = T, label.size = 3.5)+NoLegend()
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "MNtypes", label = T, label.size = 3.5)+NoLegend()
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "integrated_snn_res.4", label = T, label.size = 3.5)+NoLegend()
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "segment", label = T)+NoLegend()
+DimPlot(Cervthorlumb_neurons_MN, reduction = "umap", group.by = "timepoint", label = T)+NoLegend()
+
+DefaultAssay(Cervthorlumb_neurons_MN) <- "RNA"
+Cervthorlumb_neurons_MN <- SetIdent(Cervthorlumb_neurons_MN, value = "MNtypes")
+MN_MNPCG0 <- WhichCells(Cervthorlumb_neurons_MN, ident = "MN-PGC-0")
+MN_MNPCG1 <- WhichCells(Cervthorlumb_neurons_MN, ident = "MN-PGC-1")
+MN_MNPCG2 <- WhichCells(Cervthorlumb_neurons_MN, ident = "MN-PGC-2")
+MN_CRAN <- WhichCells(Cervthorlumb_neurons_MN, ident = "MN-Cranial")
+MN_null <- WhichCells(Cervthorlumb_neurons_MN, ident = "null")
+MN_Onuf <- WhichCells(Cervthorlumb_neurons_MN, ident = "MN-Onuf")
+MN_PGCs <- WhichCells(Cervthorlumb_neurons_MN, ident = "MN-PGC-Sacral")
+MN_skel <- WhichCells(Cervthorlumb_neurons_MN, ident = "MN-LMC/MMC/HMC")
+
+DefaultAssay(Cervthorlumb_neurons) <- "RNA"
+Cervthorlumb_neurons <- SetIdent(Cervthorlumb_neurons, value = "neurontypes_sub")
+Retired_dILB6EZ1 <- WhichCells(Cervthorlumb_neurons, ident = "dILB6-EZ1")
+
+Cervthorlumb_neurons$neurontypes_sub <- ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% MN_MNPCG0, "MN-PGC-0",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% MN_MNPCG1, "MN-PGC-1",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% MN_MNPCG2, "MN-PGC-2",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% MN_CRAN, "MN-Cranial",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% MN_null, "null",
+                                              
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% MN_Onuf, "MN-Onuf",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% MN_PGCs, "MN-PGC-Sacral",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% MN_skel, "MN-LMC/MMC/HMC",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% Retired_dILB6EZ1, "dILB-Immature",
+                                              
+                                           Cervthorlumb_neurons@meta.data$neurontypes_sub      
+                                          )))))))))
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "neurontypes_sub", label = T) + NoLegend()
+
+saveRDS(Cervthorlumb_neurons, "/Users/roomerb/cervthorlumb_neurons_anno.RDS")
+```
+
+```{r}
+library(dplyr)
+Cervthorlumb_neurons@meta.data$neurontypes_sub <- recode(Cervthorlumb_neurons@meta.data$neurontypes_sub,
+                                                        'MN-PGC-Sacral' = "MN-PGC-Sacral-1",
+                                                        'MN-Onuf' = "MN-PGC-Sacral-2"
+                                                        )
+table(Cervthorlumb_neurons@meta.data$neurontypes_sub)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "neurontypes_sub", label = T, label.size = 3)+NoLegend()
+
+saveRDS(Cervthorlumb_neurons, "/Users/roomerb/cervthorlumb_neurons_final.RDS")
+```
+
+```{r}
+#Remove residual DRG and null-classified neurons, and finalize object.
+Cervthorlumb_neurons <-  readRDS("/Users/roomerb/cervthorlumb_neurons_anno.RDS")
+DefaultAssay(Cervthorlumb_neurons) <- "RNA"
+Cervthorlumb_neurons
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "neurontypes_sub", label = T) + NoLegend()
+Cervthorlumb_neurons <- SetIdent(Cervthorlumb_neurons, value = "neurontypes_sub")
+Cervthorlumb_neurons <- subset(Cervthorlumb_neurons, idents = c("null", "DRG"), invert = TRUE)
+Cervthorlumb_neurons
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "neurontypes_sub", label = T) + NoLegend()
+saveRDS(Cervthorlumb_neurons, "/Users/roomerb/cervthorlumb_neurons_final.RDS")
+```
+
+```{r}
+#RCTD will not predict cell-types with fewer than 25 cells; combine adjacent annotations to allow RCTD to run
+#Assign unique metadata column: "neurontypes_sub_rctd"
+
+Cervthorlumb_neurons$neurontypes_sub_rctd <- Cervthorlumb_neurons$neurontypes_sub
+Cervthorlumb_neurons <- SetIdent(Cervthorlumb_neurons, value = "neurontypes_sub_rctd")
+RCTD_MNCran <- WhichCells(Cervthorlumb_neurons, ident = "MN-Cranial")
+RCTD_di5a1 <- WhichCells(Cervthorlumb_neurons, ident = "dI5a-1")
+RCTD_di5a2 <- WhichCells(Cervthorlumb_neurons, ident = "dI5a-2")
+
+Cervthorlumb_neurons$neurontypes_sub_rctd <- ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% RCTD_MNCran, "MN-LMC/MMC/HMC",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% RCTD_di5a1, "dI5a",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% RCTD_di5a2, "dI5a",
+                                              Cervthorlumb_neurons$neurontypes_sub_rctd
+                                              )))
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "neurontypes_sub_rctd", label = T) + NoLegend()
+saveRDS(Cervthorlumb_neurons, "/Users/roomerb/cervthorlumb_neurons_final.RDS")
+```
+
+```{r}
+#Recode neurontypes_sub for different levels of label transfer
+
+#neurontypes (top level annotation) provides low resolution of neuron classes; comprising dILA families, dILB families and all cardinal neuron classes
+
+#neurontypes_fam (mid-level annotation) provides family-level resolution
+
+#neurontypes_sub is the fine-level annotation already in the object
+
+#dorsalventral is a very coarse resolution used for splitting dorsal-late and early-ventral neuron subsets.
+
+#load modified csv with annotations
+neurontypes_labeltransfer <- read.csv("/Users/roomerb/Documents/Experiments/RNA-Seq/spinal_neurons_annotation.csv")
+neurontypes_sub <- neurontypes_labeltransfer[,1]
+neurontypes <- neurontypes_labeltransfer[,2]
+dorsalventral <- neurontypes_labeltransfer[,3]
+neurontypes_fam <- neurontypes_labeltransfer[,4]
+neurontypes_den <- neurontypes_labeltransfer[,5]
+
+#Load object if not already loaded
+#Cervthorlumb_neurons <-  readRDS("/Users/roomerb/cervthorlumb_neurons_anno.RDS")
+
+#Mapping subneurontypes to major classes ("neurontypes") to be used in correlation analyses and to present the entire spinal neuron dataset in supplementary figures. Subneurontypes annotations will be used when presenting either the dorsal-late or ventral-early fractions.
+
+Cervthorlumb_neurons$neurontypes <- plyr::mapvalues(
+    x = Cervthorlumb_neurons$neurontypes_sub,
+    from = neurontypes_sub, 
+    to = neurontypes)
+
+Cervthorlumb_neurons$dorsalventral <- plyr::mapvalues(
+    x = Cervthorlumb_neurons$neurontypes_sub,
+    from = neurontypes_sub, 
+    to = dorsalventral)
+
+Cervthorlumb_neurons$neurontypes_fam <- plyr::mapvalues(
+    x = Cervthorlumb_neurons$neurontypes_sub,
+    from = neurontypes_sub, 
+    to = neurontypes_fam)
+
+Cervthorlumb_neurons$neurontypes_den <- plyr::mapvalues(
+    x = Cervthorlumb_neurons$neurontypes_sub,
+    from = neurontypes_sub, 
+    to = neurontypes_den)
+
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "neurontypes", label = T,label.size = 3) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "neurontypes_sub", label = T,label.size = 3) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "neurontypes_fam", label = T,label.size = 3) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "neurontypes_den", label = T,label.size = 3) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "dorsalventral", label = T,label.size = 3) + NoLegend()
+```
+
+```{r}
+#Edit timepoint metadata and add replicate metadata
+Cervthorlumb_neurons$timepoint <- plyr::mapvalues(
+    x = Cervthorlumb_neurons$timepoint,
+    from = c("E14", "E16"), 
+    to = c("E14.5", "E16.5"))
+
+Cervthorlumb_neurons$bio_replicates <- plyr::mapvalues(
+    x = Cervthorlumb_neurons$orig.ident,
+    from = c("A14", "B14", "16TC", "16TD", "A16", "C14", "D14", "E14", "F14", "C16", "D16", "E16", "F16", "G16", "H16", "TA16", "TB16", "TE16", "TF16", "TG16", "TH16", "LA16", "LB16", "LC16", "LD16", "LE16", "LF16", "LG16", "LH16"), 
+    to = c("14.5_C_AB", "14.5_C_AB", "16.5_T_CD", "16.5_T_CD", "16.5_C_A", "E14.5_C_CD", "E14.5_C_CD", "E14.5_C_EF", "E14.5_C_EF", "16.5_C_CD", "16.5_C_CD", "16.5_C_EF", "16.5_C_EF", "16.5_C_GH", "16.5_C_GH", "16.5_T_AB", "16.5_T_AB", "16.5_T_EF", "16.5_T_EF", "16.5_T_GH", "16.5_T_GH", "16.5_L_AB", "16.5_L_AB", "16.5_L_CD", "16.5_L_CD", "16.5_L_EF", "16.5_L_EF", "16.5_L_GH", "16.5_L_GH"))
+
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "bio_replicates", label = T,label.size = 3) + NoLegend()
+
+saveRDS(Cervthorlumb_neurons, "/Users/roomerb/cervthorlumb_neurons_final.RDS")
+```
+
+```{r}
+Roome <- readRDS("/Users/roomerb/Roome2025.RDS")
+#Final reconsideration of fine-level annotations & family relationships. Recoding of cluster names below, with notes:
+```
+
+
+```{r}
+DimPlot(Roome, reduction = "umap", group.by = "neurontypes_sub", label = T, raster = F)+NoLegend()
+Roome@meta.data$neurontypes_sub <- recode(Roome@meta.data$neurontypes_sub,
+#Recoding of dILA annotations
+            'dILA1-A1-Lumb1' = "dILA1-A1-L", #Shortening of excessively long names
+            'dILA3-1X' = "dILA3-1X1", #Allowing distinction of another dILA3-1X annotation
+            'dILA3-2X1' = "dILA3-1X2", #This cluster is much more similar to dILA3-1 than dILA3-2 with respect to group marker sets
+            'dILA3-2X1-Lumb' = "dILA3-1X-L", #Same case as above (as it is a segmental variant of the same type)
+            'dILA3-2X2' = "dILA3-2X", #Removed final number, as 2X1 has been reclassified, obviating need for distinction
+            'dILA3-3X3' = "dILA4-X", #This cluster is highly similar to dILA4 and is most likely that family's Zic-null variant.
+
+            'dILA5-1A' = "dILA5-X", #This is likely a Zic-null variant of dILA5
+            'dILA5-1B' = "dILA5-A1", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-2A' = "dILA5-A2", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-3A' = "dILA5-A3", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-4A' = "dILA5-A4", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-5A' = "dILA5-A5", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-6A' = "dILA5-A6", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+
+            'dILA5-1C' = "dILA5-B1", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-2B' = "dILA5-B2", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-3B' = "dILA5-B3", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-4B' = "dILA5-B4", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-5B' = "dILA5-B5", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+
+            'dILA6-1A' = "dILA6-A1", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-2A' = "dILA6-A2", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-1B' = "dILA6-B1", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-2B' = "dILA6-B2", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-1C' = "dILA6-C1", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-1C1' = "dILA6-C1a", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-1C2' = "dILA6-C1b", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-2C' = "dILA6-C2", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+
+            'dILA3/4-Trans' = "dILA4-Imm", #Simplifying annotations of transitional states
+
+#Recoding of dILB annotations
+            'dILB2-X1' = "dILB2-X", #Only one apparent Zic-null type, removed number (not needed)
+            'dILB6-A2' = "dILB6-AX", #This is likely a Zic-null variant of dILB6-A
+            'dILB6-BZA1' = "dILB6-AZ1", #The BZ group is probably a Zic variant of dILB6-A rather than dILB6-B
+            'dILB6-BZA2' = "dILB6-AZ2", #The BZ group is probably a Zic variant of dILB6-A rather than dILB6-B
+            'dILB6-BZB1' = "dILB6-BZ1", #Simplified name, as no distinction to BZA1/A2 is needed
+            'dILB6-BZB2' = "dILB6-BZ2", #Simplified name, as no distinction to BZA1/A2 is needed
+            'dILB6-DZ1-Lumb' = "dILB6-DZ1-L", #Shortening of excessively long names
+
+            'dILB4-E14-5' = "dILB4-Imm", #Simplifying annotations of transitional states
+            'dILB5-E14-5' = "dILB5-Imm") #Simplifying annotations of transitional states
+
+DimPlot(Roome, reduction = "umap", group.by = "neurontypes_sub", label = T, label.size=2, raster = F)+NoLegend()
+table(Roome@meta.data$neurontypes_sub)
+
+#Note: The naming convention among dILA families as Zic level -> number is probably best not used for dILA3, as there are apparently major epochs of molecular diversification (subsets 1, 2 and 3). Given the otherwise similar markersets of dILA3 neuron types, I thought it was best not to refer to each of these major subsets as their own dILA families.
+
+#Update meta.data reclassification table
+neurontypes_labeltransfer <- read.csv("/Users/roomerb/neurontypes_sub2.csv")
+
+neurontypes_labeltransfer$neurontypes_sub <- recode(neurontypes_labeltransfer$neurontypes_sub,
+#Recoding of dILA annotations
+            'dILA1-A1-Lumb1' = "dILA1-A1-L", #Shortening of excessively long names
+            'dILA3-1X' = "dILA3-1X1", #Allowing distinction of another dILA3-1X annotation
+            'dILA3-2X1' = "dILA3-1X2", #This cluster is much more similar to dILA3-1 than dILA3-2 with respect to group marker sets
+            'dILA3-2X1-Lumb' = "dILA3-1X-L", #Same case as above (as it is a segmental variant of the same type)
+            'dILA3-2X2' = "dILA3-2X", #Removed final number, as 2X1 has been reclassified, obviating need for distinction
+            'dILA3-3X3' = "dILA4-X", #This cluster is highly similar to dILA4 and is most likely that family's Zic-null variant.
+
+            'dILA5-1A' = "dILA5-X", #This is likely a Zic-null variant of dILA5
+            'dILA5-1B' = "dILA5-A1", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-2A' = "dILA5-A2", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-3A' = "dILA5-A3", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-4A' = "dILA5-A4", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-5A' = "dILA5-A5", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-6A' = "dILA5-A6", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+
+            'dILA5-1C' = "dILA5-B1", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-2B' = "dILA5-B2", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-3B' = "dILA5-B3", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-4B' = "dILA5-B4", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA5-5B' = "dILA5-B5", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+
+            'dILA6-1A' = "dILA6-A1", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-2A' = "dILA6-A2", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-1B' = "dILA6-B1", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-2B' = "dILA6-B2", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-1C' = "dILA6-C1", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-1C1' = "dILA6-C1a", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-1C2' = "dILA6-C1b", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+            'dILA6-2C' = "dILA6-C2", #Changed hierarchy to Zic (letter) -> number (time) to better match other dILA families
+
+            'dILA3/4-Trans' = "dILA4-Imm", #Simplifying annotations of transitional states
+
+#Recoding of dILB annotations
+            'dILB2-X1' = "dILB2-X", #Only one apparent Zic-null type, removed number (not needed)
+            'dILB6-A2' = "dILB6-AX", #This is likely a Zic-null variant of dILB6-A
+            'dILB6-BZA1' = "dILB6-AZ1", #The BZ group is probably a Zic variant of dILB6-A rather than dILB6-B
+            'dILB6-BZA2' = "dILB6-AZ2", #The BZ group is probably a Zic variant of dILB6-A rather than dILB6-B
+            'dILB6-BZB1' = "dILB6-BZ1", #Simplified name, as no distinction to BZA1/A2 is needed
+            'dILB6-BZB2' = "dILB6-BZ2", #Simplified name, as no distinction to BZA1/A2 is needed
+            'dILB6-DZ1-Lumb' = "dILB6-DZ1-L", #Shortening of excessively long names
+
+            'dILB4-E14-5' = "dILB4-Imm", #Simplifying annotations of transitional states
+            'dILB5-E14-5' = "dILB5-Imm") #Simplifying annotations of transitional states
+
+write.csv(neurontypes_labeltransfer, "/Users/roomerb/neurontypes_sub2.csv")
+
+table(neurontypes_labeltransfer$neurontypes_sub)
+
+DimPlot(Roome, reduction = "umap", group.by = "neurontypes", label = T,label.size = 3) + NoLegend()
+DimPlot(Roome, reduction = "umap", group.by = "neurontypes_sub", label = T,label.size = 3) + NoLegend()
+DimPlot(Roome, reduction = "umap", group.by = "neurontypes_fam", label = T,label.size = 3) + NoLegend()
+DimPlot(Roome, reduction = "umap", group.by = "neurontypes_den", label = T,label.size = 3) + NoLegend()
+DimPlot(Roome, reduction = "umap", group.by = "dorsalventral", label = T,label.size = 3) + NoLegend()
+```
+
+```{r}
+#Final reclassification after making Fig.1 and supplementals:
+#     dILB2-X has substantial Zic, is likely a Zic+ main type with a minor Zic-null variant, but power is low.
+#           Renaming this type to dILB2-A1, and bumping the other dILB2-As down.
+#     Renaming dILA2-G1 and -G2 to -G and -H to parallel dILA2 which has the same structure and variant numbers.
+#           All other -H and beyond variants are bumped down one letter to accommodate.
+
+library(dplyr)
+Roome@meta.data$neurontypes_sub <- recode(Roome@meta.data$neurontypes_sub,
+
+                                          'dILB2-X' = "dILB2-A1",
+                                          'dILB2-A1' = "dILB2-A2",
+                                          'dILB2-A2' = "dILB2-A3",
+                                          'dILB2-A3' = "dILB2-A4",
+                                          'dILA4-G1' = "dILA4-G",
+                                          'dILA4-G2' = "dILA4-H",
+                                          'dILA4-H' = "dILA4-I",
+                                          'dILA4-I'  = "dILA4-J",
+                                          'dILA4-J' = "dILA4-K",
+                                          'dILA4-K' = "dILA4-L",
+                                          'dILA4-L' = "dILA4-M")
+table(Roome@meta.data$neurontypes_sub)
+
+Roome@meta.data$neurontypes_sub <- recode(Roome@meta.data$neurontypes_sub,
+
+                                          'MN-PGC-Sacral' = "MN-PGC-Sacral1",
+                                          'MN-Onuf' = "MN-PGC-Sacral2")
+
+DimPlot(Roome, reduction = "umap", group.by = "neurontypes_sub", label = T, label.size = 3)+NoLegend()
+
+#Save finalized object
+saveRDS(Roome, "/Users/roomerb/Roome2025.RDS")
+```
+
+```{r}
+#Get top PC loadings per family
+Cervthorlumb_neurons <- SetIdent(Cervthorlumb_neurons, value = "neurontypes_den")
+
+famslist <- c("dILA1", "dILA2", "dILA3", "dILA4", "dILA5", "dILA6",
+            "dILB1", "dILB2", "dILB3", "dILB4", "dILB5", "dILB6")
+
+dIL_topPCs <- as.data.frame(seq(from=1, to=200, by=1))
+colnames(dIL_topPCs) <- "X"
+
+#dIL_topPCs <- data.frame(positive = character(), negative = character(), PC = character(), fam = character())
+
+for(fams in famslist) {
+dILfam <- subset(Cervthorlumb_neurons, idents = fams)
+DefaultAssay(dILfam) <- "RNA"
+dILfam <- NormalizeData(dILfam)
+dILfam <- FindVariableFeatures(dILfam, selection.method = "vst", nfeatures = 2000)
+dILfam[["percent.mt"]] <- PercentageFeatureSet(dILfam, pattern = "^mt-")
+dILfam <- ScaleData(dILfam, vars.to.regress = c("percent.mt", "nFeature_RNA", "nCount_RNA"))
+DefaultAssay(dILfam) <- "integrated"
+dILfam <- RunPCA(dILfam, features = VariableFeatures(object = dILfam), npcs = 60)
+
+PC1<-as.data.frame(TopFeatures(dILfam, dim = 1, nfeatures = 80, balanced = TRUE)); PC1$PC <- "1"
+PC2<-as.data.frame(TopFeatures(dILfam, dim = 2, nfeatures = 80, balanced = TRUE)); PC2$PC <- "2"
+PC3<-as.data.frame(TopFeatures(dILfam, dim = 3, nfeatures = 80, balanced = TRUE)); PC3$PC <- "3"
+PC4<-as.data.frame(TopFeatures(dILfam, dim = 4, nfeatures = 80, balanced = TRUE)); PC4$PC <- "4"
+PC5<-as.data.frame(TopFeatures(dILfam, dim = 5, nfeatures = 80, balanced = TRUE)); PC5$PC <- "5"
+PC6<-as.data.frame(TopFeatures(dILfam, dim = 6, nfeatures = 80, balanced = TRUE)); PC6$PC <- "6"
+PC7<-as.data.frame(TopFeatures(dILfam, dim = 7, nfeatures = 80, balanced = TRUE)); PC7$PC <- "7"
+PC8<-as.data.frame(TopFeatures(dILfam, dim = 8, nfeatures = 80, balanced = TRUE)); PC8$PC <- "8"
+PC9<-as.data.frame(TopFeatures(dILfam, dim = 9, nfeatures = 80, balanced = TRUE)); PC9$PC <- "9"
+PC10<-as.data.frame(TopFeatures(dILfam, dim = 10, nfeatures = 80, balanced = TRUE)); PC10$PC <- "10"
+dIL_PC <- rbind(PC1, PC2)
+dIL_PC <- rbind(dIL_PC, PC3)
+dIL_PC <- rbind(dIL_PC, PC4)
+dIL_PC <- rbind(dIL_PC, PC5)
+dIL_PC <- rbind(dIL_PC, PC6)
+dIL_PC <- rbind(dIL_PC, PC7)
+dIL_PC <- rbind(dIL_PC, PC8)
+dIL_PC <- rbind(dIL_PC, PC9)
+dIL_PC <- rbind(dIL_PC, PC10)
+dIL_PC$fam <- fams
+dIL_topPCs<-cbind(dIL_topPCs, dIL_PC)
+}
+write.csv(dIL_topPCs, "/Users/roomerb/dIL_topPCs.csv")
+```
+
+```{r}
+#Get top PC loadings per class
+Cervthorlumb_neurons <- SetIdent(Cervthorlumb_neurons, value = "neurontypes_den")
+DefaultAssay(Cervthorlumb_neurons) <- "RNA"
+
+dILA <- subset(Cervthorlumb_neurons, idents = c("dILA1", "dILA2", "dILA3", "dILA4", "dILA5", "dILA6"))
+dILA <- NormalizeData(dILA)
+dILA <- FindVariableFeatures(dILA, selection.method = "vst", nfeatures = 2000)
+dILA[["percent.mt"]] <- PercentageFeatureSet(dILA, pattern = "^mt-")
+dILA <- ScaleData(dILA, vars.to.regress = c("percent.mt", "nFeature_RNA", "nCount_RNA"))
+dILA <- RunPCA(dILA, features = VariableFeatures(object = dILA), npcs = 60)
+
+PC1<-as.data.frame(TopFeatures(dILA, dim = 1, nfeatures = 80, balanced = TRUE)); PC1$PC <- "1"
+PC2<-as.data.frame(TopFeatures(dILA, dim = 2, nfeatures = 80, balanced = TRUE)); PC2$PC <- "2"
+PC3<-as.data.frame(TopFeatures(dILA, dim = 3, nfeatures = 80, balanced = TRUE)); PC3$PC <- "3"
+PC4<-as.data.frame(TopFeatures(dILA, dim = 4, nfeatures = 80, balanced = TRUE)); PC4$PC <- "4"
+PC5<-as.data.frame(TopFeatures(dILA, dim = 5, nfeatures = 80, balanced = TRUE)); PC5$PC <- "5"
+PC6<-as.data.frame(TopFeatures(dILA, dim = 6, nfeatures = 80, balanced = TRUE)); PC6$PC <- "6"
+PC7<-as.data.frame(TopFeatures(dILA, dim = 7, nfeatures = 80, balanced = TRUE)); PC7$PC <- "7"
+PC8<-as.data.frame(TopFeatures(dILA, dim = 8, nfeatures = 80, balanced = TRUE)); PC8$PC <- "8"
+PC9<-as.data.frame(TopFeatures(dILA, dim = 9, nfeatures = 80, balanced = TRUE)); PC9$PC <- "9"
+PC10<-as.data.frame(TopFeatures(dILA, dim = 10, nfeatures = 80, balanced = TRUE)); PC10$PC <- "10"
+
+dIL_PC <- rbind(PC1, PC2)
+dIL_PC <- rbind(dIL_PC, PC3)
+dIL_PC <- rbind(dIL_PC, PC4)
+dIL_PC <- rbind(dIL_PC, PC5)
+dIL_PC <- rbind(dIL_PC, PC6)
+dIL_PC <- rbind(dIL_PC, PC7)
+dIL_PC <- rbind(dIL_PC, PC8)
+dIL_PC <- rbind(dIL_PC, PC9)
+dIL_PC <- rbind(dIL_PC, PC10)
+dIL_PC$class <- "dILA"
+dILA_PC <- dIL_PC
+
+###
+
+dILB <- subset(Cervthorlumb_neurons, idents = c("dILB1", "dILB2", "dILB3", "dILB4", "dILB5", "dILB6"))
+dILB <- NormalizeData(dILB)
+dILB <- FindVariableFeatures(dILB, selection.method = "vst", nfeatures = 2000)
+dILB[["percent.mt"]] <- PercentageFeatureSet(dILB, pattern = "^mt-")
+dILB <- ScaleData(dILB, vars.to.regress = c("percent.mt", "nFeature_RNA", "nCount_RNA"))
+dILB <- RunPCA(dILB, features = VariableFeatures(object = dILB), npcs = 60)
+
+PC1<-as.data.frame(TopFeatures(dILB, dim = 1, nfeatures = 80, balanced = TRUE)); PC1$PC <- "1"
+PC2<-as.data.frame(TopFeatures(dILB, dim = 2, nfeatures = 80, balanced = TRUE)); PC2$PC <- "2"
+PC3<-as.data.frame(TopFeatures(dILB, dim = 3, nfeatures = 80, balanced = TRUE)); PC3$PC <- "3"
+PC4<-as.data.frame(TopFeatures(dILB, dim = 4, nfeatures = 80, balanced = TRUE)); PC4$PC <- "4"
+PC5<-as.data.frame(TopFeatures(dILB, dim = 5, nfeatures = 80, balanced = TRUE)); PC5$PC <- "5"
+PC6<-as.data.frame(TopFeatures(dILB, dim = 6, nfeatures = 80, balanced = TRUE)); PC6$PC <- "6"
+PC7<-as.data.frame(TopFeatures(dILB, dim = 7, nfeatures = 80, balanced = TRUE)); PC7$PC <- "7"
+PC8<-as.data.frame(TopFeatures(dILB, dim = 8, nfeatures = 80, balanced = TRUE)); PC8$PC <- "8"
+PC9<-as.data.frame(TopFeatures(dILB, dim = 9, nfeatures = 80, balanced = TRUE)); PC9$PC <- "9"
+PC10<-as.data.frame(TopFeatures(dILB, dim = 10, nfeatures = 80, balanced = TRUE)); PC10$PC <- "10"
+
+dIL_PC <- rbind(PC1, PC2)
+dIL_PC <- rbind(dIL_PC, PC3)
+dIL_PC <- rbind(dIL_PC, PC4)
+dIL_PC <- rbind(dIL_PC, PC5)
+dIL_PC <- rbind(dIL_PC, PC6)
+dIL_PC <- rbind(dIL_PC, PC7)
+dIL_PC <- rbind(dIL_PC, PC8)
+dIL_PC <- rbind(dIL_PC, PC9)
+dIL_PC <- rbind(dIL_PC, PC10)
+dIL_PC$class <- "dILB"
+dILB_PC <- dIL_PC
+
+###
+
+dIL <- subset(Cervthorlumb_neurons, idents = c("dILA1", "dILA2", "dILA3", "dILA4", "dILA5", "dILA6","dILB1", "dILB2", "dILB3", "dILB4", "dILB5", "dILB6"))
+dIL <- NormalizeData(dIL)
+dIL <- FindVariableFeatures(dIL, selection.method = "vst", nfeatures = 2000)
+dIL[["percent.mt"]] <- PercentageFeatureSet(dIL, pattern = "^mt-")
+dIL <- ScaleData(dIL, vars.to.regress = c("percent.mt", "nFeature_RNA", "nCount_RNA"))
+dIL <- RunPCA(dIL, features = VariableFeatures(object = dIL), npcs = 60)
+
+PC1<-as.data.frame(TopFeatures(dIL, dim = 1, nfeatures = 80, balanced = TRUE)); PC1$PC <- "1"
+PC2<-as.data.frame(TopFeatures(dIL, dim = 2, nfeatures = 80, balanced = TRUE)); PC2$PC <- "2"
+PC3<-as.data.frame(TopFeatures(dIL, dim = 3, nfeatures = 80, balanced = TRUE)); PC3$PC <- "3"
+PC4<-as.data.frame(TopFeatures(dIL, dim = 4, nfeatures = 80, balanced = TRUE)); PC4$PC <- "4"
+PC5<-as.data.frame(TopFeatures(dIL, dim = 5, nfeatures = 80, balanced = TRUE)); PC5$PC <- "5"
+PC6<-as.data.frame(TopFeatures(dIL, dim = 6, nfeatures = 80, balanced = TRUE)); PC6$PC <- "6"
+PC7<-as.data.frame(TopFeatures(dIL, dim = 7, nfeatures = 80, balanced = TRUE)); PC7$PC <- "7"
+PC8<-as.data.frame(TopFeatures(dIL, dim = 8, nfeatures = 80, balanced = TRUE)); PC8$PC <- "8"
+PC9<-as.data.frame(TopFeatures(dIL, dim = 9, nfeatures = 80, balanced = TRUE)); PC9$PC <- "9"
+PC10<-as.data.frame(TopFeatures(dIL, dim = 10, nfeatures = 80, balanced = TRUE)); PC10$PC <- "10"
+
+dIL_PC <- rbind(PC1, PC2)
+dIL_PC <- rbind(dIL_PC, PC3)
+dIL_PC <- rbind(dIL_PC, PC4)
+dIL_PC <- rbind(dIL_PC, PC5)
+dIL_PC <- rbind(dIL_PC, PC6)
+dIL_PC <- rbind(dIL_PC, PC7)
+dIL_PC <- rbind(dIL_PC, PC8)
+dIL_PC <- rbind(dIL_PC, PC9)
+dIL_PC <- rbind(dIL_PC, PC10)
+dIL_PC$class <- "dILA_dILB"
+dILA_dILB_PC <- dIL_PC
+
+dIL_class_topPCs<-cbind(dILAPC, dILB_PC)
+dIL_class_topPCs<-cbind(dIL_class_topPCs, dILA_dILB_PC)
+write.csv(dIL_class_topPCs, "/Users/roomerb/dIL_class_topPCs.csv")
+
+###
+
+famslist <- c("dILA1", "dILA2", "dILA3", "dILA4", "dILA5", "dILA6",
+            "dILB1", "dILB2", "dILB3", "dILB4", "dILB5", "dILB6")
+
+dIL_topPCs <- as.data.frame(seq(from=1, to=200, by=1))
+colnames(dIL_topPCs) <- "X"
+
+#dIL_topPCs <- data.frame(positive = character(), negative = character(), PC = character(), fam = character())
+
+for(fams in famslist) {
+dILfam <- subset(Cervthorlumb_neurons, idents = fams)
+DefaultAssay(dILfam) <- "RNA"
+dILfam <- NormalizeData(dILfam)
+dILfam <- FindVariableFeatures(dILfam, selection.method = "vst", nfeatures = 2000)
+dILfam[["percent.mt"]] <- PercentageFeatureSet(dILfam, pattern = "^mt-")
+dILfam <- ScaleData(dILfam, vars.to.regress = c("percent.mt", "nFeature_RNA", "nCount_RNA"))
+DefaultAssay(dILfam) <- "integrated"
+dILfam <- RunPCA(dILfam, features = VariableFeatures(object = dILfam), npcs = 60)
+
+PC1<-as.data.frame(TopFeatures(dILfam, dim = 1, nfeatures = 80, balanced = TRUE)); PC1$PC <- "1"
+PC2<-as.data.frame(TopFeatures(dILfam, dim = 2, nfeatures = 80, balanced = TRUE)); PC2$PC <- "2"
+PC3<-as.data.frame(TopFeatures(dILfam, dim = 3, nfeatures = 80, balanced = TRUE)); PC3$PC <- "3"
+PC4<-as.data.frame(TopFeatures(dILfam, dim = 4, nfeatures = 80, balanced = TRUE)); PC4$PC <- "4"
+PC5<-as.data.frame(TopFeatures(dILfam, dim = 5, nfeatures = 80, balanced = TRUE)); PC5$PC <- "5"
+PC6<-as.data.frame(TopFeatures(dILfam, dim = 6, nfeatures = 80, balanced = TRUE)); PC6$PC <- "6"
+PC7<-as.data.frame(TopFeatures(dILfam, dim = 7, nfeatures = 80, balanced = TRUE)); PC7$PC <- "7"
+PC8<-as.data.frame(TopFeatures(dILfam, dim = 8, nfeatures = 80, balanced = TRUE)); PC8$PC <- "8"
+PC9<-as.data.frame(TopFeatures(dILfam, dim = 9, nfeatures = 80, balanced = TRUE)); PC9$PC <- "9"
+PC10<-as.data.frame(TopFeatures(dILfam, dim = 10, nfeatures = 80, balanced = TRUE)); PC10$PC <- "10"
+dIL_PC <- rbind(PC1, PC2)
+dIL_PC <- rbind(dIL_PC, PC3)
+dIL_PC <- rbind(dIL_PC, PC4)
+dIL_PC <- rbind(dIL_PC, PC5)
+dIL_PC <- rbind(dIL_PC, PC6)
+dIL_PC <- rbind(dIL_PC, PC7)
+dIL_PC <- rbind(dIL_PC, PC8)
+dIL_PC <- rbind(dIL_PC, PC9)
+dIL_PC <- rbind(dIL_PC, PC10)
+dIL_PC$class <- dILA
+dIL_topPCs<-cbind(dIL_topPCs, dIL_PC)
+}
+write.csv(dIL_topPCs, "/Users/roomerb/dIL_topPCs.csv")
+```
+
+```{r}
+#Fig1D: Dotplot for Roome 2025
+Cervthorlumb_neurons <- SetIdent(Cervthorlumb_neurons, value = "neurontypes_den")
+# Set levels and set list to active ident
+my_levels <- rev(c("dI1", "dI2", "dI3", "dI4", "dI5", "dI6", "v0c", "v0d", "v0v", "v1", "v2a", "v2b", "CSF-CN", "HB9-Int", "MN", "v3", "dILA1", "dILA2", "dILA3", "dILA4", "dILA5", "dILA6", "dILB1", "dILB2", "dILB3", "dILB4", "dILB5", "dILB6", "Immature", "hindbrain", "other"));Cervthorlumb_neurons@active.ident <- factor(x = Cervthorlumb_neurons@active.ident, levels = my_levels)
+
+
+neuron_features <- c("Barhl2", "Foxd3", "Isl1", "Nppa", "Phox2a", "Dmrt3","Pitx2", "Otp", "Esrrb", "Evx1", "En1", "Vsx2", "Gata3", "Pkd2l1", "Mnx1", "Creb5", "Nkx2-2", "Zic1", "Zic2", "Zic3", "Zic4", "Zic5", "Lbx1", "Lmx1b", "Islr2", "Rorb", "Plekhd1", "Klhl14", "Tfap2b", "Kcnip2", "Cdh3", "Pdyn", "Slc35d3", "Neurog2", "Prox1", "Skor1", "Col14a1", "Mafa", "Cbln1", "Grp", "Hmga2", "Grpr", "Gdf10", "Sox5", "Pth2r", "Cdh23", "Slc17a6", "Slc32a1")
+
+pdf(file = "/Users/roomerb/fig1d.pdf", height = 7, width = 12)
+DotPlot(Cervthorlumb_neurons, assay = "RNA", features = neuron_features)+theme(axis.text.x = element_text(angle = 40, vjust = 0.5, hjust=1))+ theme(axis.line  = element_blank())+ylab('') +scale_colour_gradient2(low = "#FFFFFF", high = "#000000") + theme(axis.ticks = element_blank())+geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=NA)
+dev.off()
+```
+
+
+```{r}
+#Export Dimplot using Neurontypes annotation (with or without labels)
+pdf(file = "/Users/roomerb/1416_allneurons_nolabels.pdf", height = 9, width = 12)
+DimPlot(Roome2025, reduction = "umap", group.by = "neurontypes", label = F,label.size = 2) + NoLegend()
+dev.off()
+pdf(file = "/Users/roomerb/1416_allneurons_labels.pdf", height = 9, width = 12)
+DimPlot(Roome2025, reduction = "umap", group.by = "neurontypes", label = T,label.size = 2) + NoLegend()
+dev.off()
+
+#Export Dimplot using neurontypes_fam annotation (with or without labels)
+pdf(file = "/Users/roomerb/1416_allneurons_nolabels_fam.pdf", height = 9, width = 12)
+DimPlot(Roome2025, reduction = "umap", group.by = "neurontypes_fam", label = F,label.size = 2) + NoLegend()+labs(title = NULL)
+dev.off()
+pdf(file = "/Users/roomerb/1416_allneurons_labels_fam.pdf", height = 9, width = 12)
+DimPlot(Roome2025, reduction = "umap", group.by = "neurontypes_fam", label = T,label.size = 2) + NoLegend()+labs(title = NULL)
+dev.off()
+
+#Export Dimplot using neurontypes_sub annotation (with or without labels)
+pdf(file = "/Users/roomerb/1416_allneurons_nolabels_sub.pdf", height = 9, width = 12)
+DimPlot(Roome2025, reduction = "umap", group.by = "neurontypes_sub", label = F,label.size = 2) + NoLegend()
+dev.off()
+pdf(file = "/Users/roomerb/1416_allneurons_labels_sub.pdf", height = 9, width = 12)
+DimPlot(Roome2025, reduction = "umap", group.by = "neurontypes_sub", label = T,label.size = 2) + NoLegend()
+dev.off()
+
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "neurontypes_fam", label = F,label.size = 2) + NoLegend()+labs(title = NULL)
+```
+
+```{r}
+#Zic1-5 gene family featureplots
+DefaultAssay(Roome2025) <- "RNA"
+FeaturePlot(Roome2025, features = "Zic5", order = T)
+FeaturePlot(Roome2025, features = "Zic2", order = T)
+FeaturePlot(Roome2025, features = "Zic3", order = T)
+FeaturePlot(Roome2025, features = "Zic4", order = T)
+FeaturePlot(Roome2025, features = "Zic1", order = T)
+
+pdf(file = "/Users/roomerb/zic1.pdf", height = 18, width = 24)
+FeaturePlot(Roome2025, features = "Zic1", order = T, raster = T)+labs(title = NULL)
+dev.off()
+pdf(file = "/Users/roomerb/zic4.pdf", height = 9, width = 12)
+FeaturePlot(Roome2025, features = "Zic4", order = T, raster = F)
+dev.off()
+pdf(file = "/Users/roomerb/zic3.pdf", height = 9, width = 12)
+FeaturePlot(Roome2025, features = "Zic3", order = T, raster = T)
+dev.off()
+pdf(file = "/Users/roomerb/zic2.pdf", height = 9, width = 12)
+FeaturePlot(Roome2025, features = "Zic2", order = T, raster = T)
+dev.off()
+pdf(file = "/Users/roomerb/zic5.pdf", height = 9, width = 12)
+FeaturePlot(Roome2025, features = "Zic5", order = T, raster = T)
+dev.off()
+```
+
+```{r}
+#FindAllMarkers for supplemental tables
+
+#Family-level code (run on HPC, code marked as ##)
+
+###! /bin/bash
+##module load R
+##R --no-save
+##Rscript -e '
+##library(Seurat);
+##library(presto);
+##Roome <- readRDS("/data/roomerb/seurat/Roome2025.RDS");
+###FindAllMarkers, neurontypes_den (family level for main fig dendrogram)
+##DefaultAssay(Roome) <- "RNA";
+##Roome <- SetIdent(Roome, value = "neurontypes_den");
+##Roome_fam_markers <- FindAllMarkers(Roome, min.pct = 0.005);
+##write.csv(Roome_fam_markers, "/data/roomerb/seurat/Roome_fam_markers.csv")'
+
+#Cluster-level code (run on HPC, code marked as ##)
+###! /bin/bash
+##module load R
+##R --no-save
+##Rscript -e '
+##library(Seurat);
+##library(presto);
+##Roome <- readRDS("/data/roomerb/seurat/Roome2025.RDS");
+##Roome <- SetIdent(Roome, value = "neurontypes_den");
+##Roome <- subset(Roome, idents = c("dILA1", "dILA2", "dILA3", "dILA4", "dILA5", "dILA6", "dILB1", "dILB2", "dILB3", "dILB4", "dILB5", "dILB6"))
+###FindAllMarkers, neurontypes_sub (fine cluster-level annotations)
+##DefaultAssay(Roome) <- "RNA";
+##Roome <- SetIdent(Roome, value = "neurontypes_sub");
+##Roome_sub_markers <- FindAllMarkers(Roome, min.pct = 0.005);
+##write.csv(Roome_sub_markers, "/data/roomerb/seurat/Roome_sub_markers_005.csv")'
+
+#Unvalidated cardinal neuron type / ventral neuron cluster-level markersets removed from clusters-level FindAllMarkers table.
+#Cardinal/ventral neuron types were included in FindAllMarkers to provide context and more specificity for the dIL neuron markersets. They will be explored in detail in future work, but their data is nonetheless available on GEO for those who are interested in the meantime.
+
+markers_sub <- read.csv("/Users/roomerb/Roome_sub_markers_005.csv")
+unique(markers_sub$cluster)
+Celltype <- ("^dIL")
+markers_sub_dIL <- markers_sub %>% filter(str_detect(cluster, Celltype))
+unique(markers_sub_dIL$cluster)
+write.csv(markers_sub_dIL, "/Users/roomerb/Roome_sub_markers_005_dIL.csv")
+
+#FindAllMarkers lists appended to supplemental tables
+```
+
+```{r}
+#Neurons per sample
+write.csv(table(Roome2025$orig.ident), "/Users/roomerb/neurons_per_sample.csv")
+
+#Export contingency table of fine-annotated neurons for Figure S2 and supplemental table (TBD)
+write.csv(table(Roome2025$neurontypes_sub), "/Users/roomerb/neurontypes_sub_freq.csv")
+```
+
