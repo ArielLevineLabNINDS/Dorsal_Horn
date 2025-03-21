@@ -1,0 +1,823 @@
+```{r}
+library(Seurat)
+library(tidyverse)
+```
+
+```{r}
+#Division of All-neurons object into a dILA/B subset and an early/ventral subset. The earliest OC1+ groups are not well separable at this stage by neurotransmitter identity due to the massive variation in late-born cells, but will be in an early/ventral subset.
+DefaultAssay(Cervthorlumb_neurons) <- "RNA"
+Cervthorlumb_neurons <- SetIdent(Cervthorlumb_neurons, value = "integrated_snn_res.4")
+Cervthorlumb_dorsal_late <- subset(Cervthorlumb_neurons, idents = c(63,82,5,79,55,4,3,100,70,38,6,21,50,34,102,86,27,0,37,16,12,2,19,28,22,87,71,59,90,44,76,42,39,35,15,17,80,62,74,97,73,48,40,41,10,25,18,68,24,11,30,54,88,65,46,94,8,9,89,56,29,20,14,61,85,57,53))
+Cervthorlumb_ventral_early <- subset(Cervthorlumb_neurons, idents = c(77,83,49,108,96,81,106,92,33,64,47,104,107,58,84,101,98,91,93,60,43,13,113,103,36,32,78,51,109,67,95,31,105,52,111,7,114,110,72,45,66,69,99,112,1,75,115,58,107,26,23))
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.4", label = T)
+DimPlot(Cervthorlumb_dorsal_late, reduction = "umap", group.by = "integrated_snn_res.4", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.4", label = T)
+Cervthorlumb_neurons
+Cervthorlumb_dorsal_late
+Cervthorlumb_ventral_early
+
+#Save processed data in seurat object as .RDS
+saveRDS(Cervthorlumb_dorsal_late, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/cervlumb_dorsal_late.RDS")
+saveRDS(Cervthorlumb_ventral_early, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/cervlumb_ventral_early.RDS")
+```
+
+```{r}
+library(Seurat)
+Cervthorlumb_ventral_early <- readRDS("/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/cervlumb_ventral_early.RDS")
+```
+
+```{r}
+#Division1 - All early/ventral neurons (All neurons but obvious dILA/B and dI4)
+DefaultAssay(Cervthorlumb_ventral_early) <- "RNA"
+Cervthorlumb_ventral_early <- NormalizeData(Cervthorlumb_ventral_early)
+Cervthorlumb_ventral_early <- FindVariableFeatures(Cervthorlumb_ventral_early, selection.method = "vst", nfeatures = 2000)
+Cervthorlumb_ventral_early[["percent.mt.neurev"]] <- PercentageFeatureSet(Cervthorlumb_ventral_early, pattern = "^mt-")
+Cervthorlumb_ventral_early <- ScaleData(Cervthorlumb_ventral_early, vars.to.regress = c("percent.mt.neurev", "nCount_RNA"))
+DefaultAssay(Cervthorlumb_ventral_early) <- "integrated"
+Cervthorlumb_ventral_early <- RunPCA(Cervthorlumb_ventral_early, features = VariableFeatures(object = Cervthorlumb_ventral_early), npcs = 180)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 31:45, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 46:60, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 61:75, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 76:90, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 91:105, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 106:120, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 121:135, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 136:150, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 151:165, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 166:180, cells = 500, balanced = TRUE)
+ElbowPlot(Cervthorlumb_ventral_early, ndims = 180)
+
+DefaultAssay(Cervthorlumb_ventral_early) <- "integrated"
+Cervthorlumb_ventral_early <- FindNeighbors(Cervthorlumb_ventral_early, reduction = "pca", dims = 1:180)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 0.5)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 1)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 2)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 4)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 6)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 8)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 16)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 32)
+Cervthorlumb_ventral_early <- RunUMAP(Cervthorlumb_ventral_early, reduction = "pca", dims = 1:180)
+
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.0.5", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.1", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.2", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.4", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.6", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.8", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.16", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "segment", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "timepoint", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "neurontypes_ev", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.32", label = T)+NoLegend()
+FeaturePlot(Cervthorlumb_ventral_early, features = "Bdnf", order = T)
+```
+
+```{r}
+#Examine neurotransmitter identity, temporal transcription factors, and Hox (segmental) identity
+DefaultAssay(Cervthorlumb_ventral_early) <- "RNA"
+FeaturePlot(Cervthorlumb_ventral_early, features = "Slc17a6", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Slc32a1", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Slc5a7", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Onecut1", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Zfhx3", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Neurod2", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Nfib", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "nCount_RNA", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "nFeature_RNA", order = T)
+
+FeaturePlot(Cervthorlumb_ventral_early, features = "Wt1", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxc4", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxc5", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxc6", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxc8", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxa10", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxa11", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxa13", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxc10", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxc12", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxc13", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxd10", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxd12", order = T)
+FeaturePlot(Cervthorlumb_ventral_early, features = "Hoxd13", order = T)
+```
+
+```{r}
+#Removing small amount of remaining low nCount from before
+Cervthorlumb_ventral_early <- SetIdent(Cervthorlumb_ventral_early, value = "integrated_snn_res.4")
+Cervthorlumb_ventral_early
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.4", label = T)
+Cervthorlumb_ventral_early <- subset(Cervthorlumb_ventral_early, idents = c(
+0,
+1,
+2, 
+3,
+4,
+5,
+6,
+7,
+8,
+9,
+10,
+11,
+12,
+13,
+14,
+#15, low nCount
+16,
+17,
+18,
+19,
+20,
+21,
+22,
+23,
+24,
+25,
+26,
+27,
+28,
+29,
+30,
+31,
+32,
+33,
+34,
+35,
+36,
+37,
+38,
+39,
+40,
+41,
+42,
+43,
+44,
+45,
+46,
+47,
+48,
+49,
+50,
+51,
+52,
+53,
+54,
+55,
+56,
+57,
+58,
+59,
+60,
+61,
+62,
+63,
+64,
+65,
+66,
+67,
+68,
+69,
+70,
+71,
+72,
+73,
+74,
+75,
+76,
+77,
+78,
+79,
+80,
+81,
+82,
+83))
+Cervthorlumb_ventral_early
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.4", label = T)
+```
+
+```{r}
+DefaultAssay(Cervthorlumb_ventral_early) <- "integrated"
+Cervthorlumb_ventral_early <- RunPCA(Cervthorlumb_ventral_early, features = VariableFeatures(object = Cervthorlumb_ventral_early), npcs = 300)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 31:45, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 46:60, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 61:75, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 76:90, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 91:105, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 106:120, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 121:135, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 136:150, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 151:165, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 166:180, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 181:195, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 196:210, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 211:225, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 226:240, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 241:255, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 256:270, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 271:285, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early, dims = 286:300, cells = 500, balanced = TRUE)
+ElbowPlot(Cervthorlumb_ventral_early, ndims = 300)
+
+DefaultAssay(Cervthorlumb_ventral_early) <- "integrated"
+#previously 240, reduced finally to 180
+Cervthorlumb_ventral_early <- FindNeighbors(Cervthorlumb_ventral_early, reduction = "pca", dims = 1:180)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 0.5)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 1)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 2)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 4)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 6)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 8)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 16)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 32)
+Cervthorlumb_ventral_early <- FindClusters(Cervthorlumb_ventral_early, resolution = 48)
+Cervthorlumb_ventral_early <- RunUMAP(Cervthorlumb_ventral_early, reduction = "pca", dims = 1:180)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.0.5", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.1", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.2", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.4", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.6", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.8", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.16", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.32", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.48", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "segment", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "timepoint", label = T)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "neurontypes_ev", label = T, label.size = 3)+NoLegend()
+Cervthorlumb_ventral_early <- SetIdent(Cervthorlumb_ventral_early, value = "segment")
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", cells.highlight=WhichCells(Cervthorlumb_ventral_early, ident = "Cervical"), order = T,raster = FALSE)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", cells.highlight=WhichCells(Cervthorlumb_ventral_early, ident = "Lumbar"), order = T,raster = FALSE)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", cells.highlight=WhichCells(Cervthorlumb_ventral_early, ident = "Thoracic"), order = T,raster = FALSE)
+```
+
+```{r}
+#Add cell-type annotations to $neurontypes metadata based on the identity of resolution 0.5 clusters from FindMarkers.
+Cervthorlumb_ventral_early$neurontypes_ev <- plyr::mapvalues(
+    x = Cervthorlumb_ventral_early$integrated_snn_res.32,
+    from = c(56, 103, 14, 24, 41,141,37,4,32,12,139,66,1,40, 164,149,147, 158, 71, 104, 7, 58,68,175, 82, 121,15,133,146,134, 167, 101,80,13,183,64,9,31, 62, 118,165, 81,5,46,142,93, 97, 100, 174, 140,67, 45, 171, 29, 138, 6, 136, 85, 61, 122, 3, 99, 84, 182, 157, 145, 47, 76, 50, 108, 128, 129, 38, 23, 181, 169, 19, 156, 180, 77,43,144,73,143,106, 28, 114, 152, 162, 35, 89, 159, 44, 150, 161, 49,54,94,27,115,53,87,98,63,105,21,148,70,102,179,51,130,123, 59, 168, 131, 86,151,107,48,22,185,172,8,117,26,96,69, 127, 119, 17, 2, 116, 20 ,95, 78,91,72,88,74, 34, 170, 75, 113, 79, 186, 65, 52, 135, 126, 92, 155, 109, 163, 25, 30, 18, 124, 90, 120, 137, 125, 39, 11, 55, 36, 177, 111, 178, 57,83, 60, 0 ,173, 153, 184, 112, 160, 16, 176, 33,132,166,42,154, 110, 10), 
+    to = c("v2b1", "v2b2", "v2b3", "v2b4", "v2b5", "v2b6", "v2b7", "v2b8", "v2b9", "v2b9", "v2b-CSF-CN", "v2b-CSF-CN", "v2b-CSF-CN", "v2b-CSF-CN", "pFP-CSF-CN", "pv2b-CSF-CN", "pv2b/FP", "v1a", "dI6a", "dI4a", "dI4b", "dI4c", "dI4c", "dI4c*", "dI2a", "dI2b", "dI2b", "v0c1", "v0c2", "v0d1", "HB9-Int", "dI1a","v1b","v1c","v1c","v1d","v1e", "dI6b", "dI6c", "dI6c", "dI6d", "v1b","v0d2","v0d3","v0d5", "v1f", "v1f", "v1f", "v1f", "v1f", "v1h", "v1f", "v1f", "v1g", "v1g", "v1i", "v1j", "v1k", "v1l", "v1m", "v1m", "v0d4", "v0d6", "v1x-Lumb", "pv1", "pv1", "v1-Immature", "v1-Immature", "dI6/v0d-Immature", "dI6/v0d-Immature", "dI6/v0d-Immature", "v0v2-A-C", "v0v1", "null", "null", "null", "null", "dI5d", "DRG", "MN-LMC/HMC/MMC", "dI6e", "dI6f", "dI6f", "dI6g", "dI6g", "dI6h", "dI6i", "dI6j", "dI6j", "dI6k", "dI6/v0d-late", "v0d7", "dI6/v0d/v1-late", "dI3a", "dI3b", "dI3c", "dI3d", "dI3e", "dI3e", "dI3e", "dI3f", "dI3f", "dI3g", "dI2g", "dI2h", "dI2i", "dI2j", "dI2j", "dI2j-CC", "dI2k-CC", "dI2k-CC", "dI2k", "dI2k", "dI2f", "dI2c-CCN", "dI2c", "dI2c", "dI2e", "dI2e", "dI2d-1", "dI2d-2", "dI2d-2", "dI1i", "dI1i", "dI2l", "dI2l", "dI2l","dA1-like", "v0v2-A-C", "v3a", "v3b", "v3c", "v3d", "v3e", "v3e", "v3e", "v3f-Foxa2-1", "v3f-Foxa2-2", "v3f-Immature", "v3f-Immature", "v0v7", "Progenitors", "v3f", "v3f", "v0v/v3 Immature", "v0v/v3 Immature", "v0v3", "v0v4", "v0v5", "v0v6", "dI1-LCN", "dI1b", "dI1c-Thor1", "dI1c-Thor2", "dI1c-Thor3", "dI1c-CL", "dI1b", "dI1e", "dI1f", "dI1g", "dI1h", "v2a5", "v2a6", "v2a7", "v2a8", "v2a9", "v2a-immature", "dI1b*", "dI1b*", "dI1d", "dI1d", "PGC-like", "PGC-like", "PGC-like", "PGC-like", "PGC-Sacral", "null", "null", "null", "null", "null", "null", "null", "null", "v2b5", "dI1b", "dI1c"))
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "neurontypes_ev", label = T, label.size = 3)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "segment", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "timepoint", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "integrated_snn_res.32", label = T, label.size = 2)+NoLegend()
+```
+
+```{r}
+#Cervthorlumb_ventral_early numbers reclassified to names
+library(dplyr)
+Cervthorlumb_ventral_early@meta.data$neurontypes_ev <- recode(Cervthorlumb_ventral_early@meta.data$neurontypes_ev,
+                                                        'dI5a-1' = "dI5a-1",'dI5a-2' = "dI5a-2", 
+                                                        'dI5b-1' = "dI5b-1",'dI5b-2' = "dI5b-2", 
+                                                        'dI5c-1' = "dI5c-1",'dI5c-2' = "dI5c-2",'dI5c-3' = "dI5c-3", 
+                                                        'v2a1' = "v2a1", 
+                                                        'v2a2' = "v2a2", 
+                                                        'v2a3' = "v2a3",'v2a3-Lumb' = "v2a3-Lumb", 
+                                                        'v2a4' = "v2a4",'v2a4-Cerv' = "v2a4-Cerv",'v2a4-Thor' = "v2a4-Thor",'v2a4-Lumb' = "v2a4-Lumb",
+                                                        '31' = "v2a5",'87' = "v2a6",'14' = "v2a7",'99' = "v2a8",'84' = "v2a9",
+                                                        'dA3/dB3' = "dA3/dB3",
+                                                        '100' = "v2b1",'7' = "v2b2",'42' = "v2b3",'77' = "v2b4",'53' = "v2b5",
+                                                        '43' = "v2b6",'85' = "v2b7",'88' = "v2b8",'25' = "v2b9",'2' = "v2b-CSF-CN",
+                                                        '55' = "v1a",'116' = "v1b",'34' = "v1c",'107' = "v1d",'121' = "v1e",
+                                                        '4' = "v1f",'41' = "v1g",'109' = "v1h",'104' = "v1i",'39' = "v1j",
+                                                        '119' = "v1k",'105' = "v1l",'28' = "v1m",'92' = "v1-Immature",'46' = "pv1",'70' = "v1x-Lumb",
+                                                        '37' = "v0d1",'95' = "v0d2",'91' = "v0d3",'126' = "v0d4",'44' = "v0d5",'118' = "v0d6",'56' = "v0d7",
+                                                        '112' = "dI6a",'81' = "dI6b",'23' = "dI6c",'60' = "dI6d",'89' = "dI6e",'45' = "dI6f",
+                                                        '10' = "dI6g",'79' = "dI6h",'19' = "dI6i",'52' = "dI6j",'83' = "dI6k",
+                                                        '8' = "dI4a",'111' = "dI4b",'102' = "dI4c",'66' = "dI4c*",
+                                                        '36' = "v0c1",'47' = "v0c2",
+                                                        '54' = "dI5d",
+                                                        '61' = "HB9-Int",
+                                                        '69' = "DRG",
+                                                        '120' = "dI6/v0d-Late",'90' = "dI6/v0d-Late",
+                                                        '110' = "dA1-like",
+                                                        '64' = "Progenitors",
+                                                        '67' = "v2a-Immature",
+                                                        '114' = "v3-Immature",
+                                                        '73' = "v0v/v3-Immature",
+                                                        '12' = "dI6/v0d-Immature",
+                                                        '1' = "PGC-like",'71' = "PGC-Sacral",'115' = "MN-LMC/HMC/MMC",
+                                                        '51' = "dI3a",'57' = "dI3b",'94' = "dI3c",'98' = "dI3d",'20' = "dI3e",'97' = "dI3f",'125' = "dI3g",
+                                                        '24' = "v3a",'63' = "v3b",'74' = "v3c",'21' = "v3d",'75' = "v3e",'18' = "v3f",'123' = "v3f-Foxa2-1",'113' = "v3f-Foxa2-2",
+                                                        '86' = "v0v1",'33' = "v0v2",'108' = "v0v3",'96' = "v0v4",'38' = "v0v5",'32' = "v0v6",'82' = "v0v7",
+                                                        '117' = "dI2a",'27' = "dI2b",'35' = "dI2c",'62' = "dI2c-CCN",'93' = "dI2d-1",'72' = "dI2d-2",'11' = "dI2e",
+                                                        '103' = "dI2f",'106' = "dI2g",'9' = "dI2h",'76' = "dI2i",'49' = "dI2j",'29' = "dI2k",'6' = "dI2j-CC",'68' = "dI2k-CC",'22' = "dI2l",
+                                                        '5' = "dI1a",'15' = "dI1b",'16' = "dI1b*",'3' = "dI1c",'101' = "dI1d",'124' = "dI1-LCN",'30' = "dI1e",'122' = "dI1f",
+                                                        '80' = "dI1c-CL",'13' = "dI1c-Thor1",'58' = "dI1c-Thor2",'78' = "dI1c-Thor3",'26' = "dI1g",'40' = "dI1h",'65' = "dI1i",
+                                                        '59' = "pFP-CSF-CN",
+                                                        '50' = "pv2b-CSF-CN",
+                                                        '48' = "pv2b/FP",
+                                              )
+table(Cervthorlumb_ventral_early@meta.data$neurontypes_ev)
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "neurontypes_ev", label = T, label.size = 3)+NoLegend()
+```
+
+```{r}
+saveRDS(Cervthorlumb_ventral_early, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/cervlumb_ventral_early.RDS")
+```
+
+```{r}
+#Storage of neurontypes_ev into cell lists to map onto all-neurons dataset
+DefaultAssay(Cervthorlumb_ventral_early) <- "RNA"
+Cervthorlumb_ventral_early <- SetIdent(Cervthorlumb_ventral_early, value = "neurontypes_ev")
+v2b1 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2b1")
+v2b2 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2b2")
+v2b3 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2b3")
+v2b4 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2b4")
+v2b5 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2b5")
+v2b6 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2b6")
+v2b7 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2b7")
+v2b8 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2b8")
+v2b9 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2b9")
+v2bcsfcn <- WhichCells(Cervthorlumb_ventral_early, ident = "v2b-CSF-CN")
+pfpcsfcn <- WhichCells(Cervthorlumb_ventral_early, ident = "pFP-CSF-CN")
+pv2bcsfcn <- WhichCells(Cervthorlumb_ventral_early, ident = "pv2b-CSF-CN")
+pv2bfb <- WhichCells(Cervthorlumb_ventral_early, ident = "pv2b/FP")
+pgclike <- WhichCells(Cervthorlumb_ventral_early, ident = "PGC-like")
+pgcsacral <- WhichCells(Cervthorlumb_ventral_early, ident = "PGC-Sacral")
+mnlmchmcmmc <- WhichCells(Cervthorlumb_ventral_early, ident = "MN-LMC/HMC/MMC")
+DRG <- WhichCells(Cervthorlumb_ventral_early, ident = "DRG")
+dI5d <- WhichCells(Cervthorlumb_ventral_early, ident = "dI5d")
+hb9int <- WhichCells(Cervthorlumb_ventral_early, ident = "HB9-Int")
+Progenitors2 <- WhichCells(Cervthorlumb_ventral_early, ident = "Progenitors")
+pv1 <- WhichCells(Cervthorlumb_ventral_early, ident = "pv1")
+v1imm <- WhichCells(Cervthorlumb_ventral_early, ident = "v1-Immature")
+v1m <- WhichCells(Cervthorlumb_ventral_early, ident = "v1m")
+dI6v0dimm <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6/v0d-Immature")
+v0d1 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0d1")
+v0d2 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0d2")
+v0d3 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0d3")
+v0d4 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0d4")
+v0d5 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0d5")
+v0d6 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0d6")
+v0d7 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0d7")
+dI6v0dv1late <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6/v0d-Late")
+dI6a <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6a")
+dI6b <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6b")
+dI6c <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6c")
+dI6d <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6d")
+dI6e <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6e")
+dI6f <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6f")
+dI6g <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6g")
+dI6h <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6h")
+dI6i <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6i")
+dI6j <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6j")
+dI6k <- WhichCells(Cervthorlumb_ventral_early, ident = "dI6k")
+v1a <- WhichCells(Cervthorlumb_ventral_early, ident = "v1a")
+v1b <- WhichCells(Cervthorlumb_ventral_early, ident = "v1b")
+v1c <- WhichCells(Cervthorlumb_ventral_early, ident = "v1c")
+v1d <- WhichCells(Cervthorlumb_ventral_early, ident = "v1d")
+v1e <- WhichCells(Cervthorlumb_ventral_early, ident = "v1e")
+v1f <- WhichCells(Cervthorlumb_ventral_early, ident = "v1f")
+v1g <- WhichCells(Cervthorlumb_ventral_early, ident = "v1g")
+v1h <- WhichCells(Cervthorlumb_ventral_early, ident = "v1h")
+v1i <- WhichCells(Cervthorlumb_ventral_early, ident = "v1i")
+v1j <- WhichCells(Cervthorlumb_ventral_early, ident = "v1j")
+v1k <- WhichCells(Cervthorlumb_ventral_early, ident = "v1k")
+v1l <- WhichCells(Cervthorlumb_ventral_early, ident = "v1l")
+v1xLumb <- WhichCells(Cervthorlumb_ventral_early, ident = "v1x-Lumb")
+dI4a <- WhichCells(Cervthorlumb_ventral_early, ident = "dI4a")
+dI4b <- WhichCells(Cervthorlumb_ventral_early, ident = "dI4b")
+dI4c <- WhichCells(Cervthorlumb_ventral_early, ident = "dI4c")
+dI4c2 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI4c*")
+dI2a <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2a")
+dI2b <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2b")
+dI2c <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2c")
+dI2cCCN <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2c-CCN")
+dI2d1 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2d-1")
+dI2d2 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2d-2")
+dI2e <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2e")
+dI2f <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2f")
+dI2g <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2g")
+dI2h <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2h")
+dI2i <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2i")
+dI2j <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2j")
+dI2k <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2k")
+dI2jCC <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2j-CC")
+dI2kCC <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2k-CC")
+dI2l <- WhichCells(Cervthorlumb_ventral_early, ident = "dI2l")
+v0c1 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0c1")
+v0c2 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0c2")
+v0v1 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0v1")
+v0v2 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0v2")
+v0v3 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0v3")
+v0v4 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0v4")
+v0v5 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0v5")
+v0v6 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0v6")
+v0v7 <- WhichCells(Cervthorlumb_ventral_early, ident = "v0v7")
+dI3a <- WhichCells(Cervthorlumb_ventral_early, ident = "dI3a")
+dI3b <- WhichCells(Cervthorlumb_ventral_early, ident = "dI3b")
+dI3c <- WhichCells(Cervthorlumb_ventral_early, ident = "dI3c")
+dI3d <- WhichCells(Cervthorlumb_ventral_early, ident = "dI3d")
+dI3e <- WhichCells(Cervthorlumb_ventral_early, ident = "dI3e")
+dI3f <- WhichCells(Cervthorlumb_ventral_early, ident = "dI3f")
+dI3g <- WhichCells(Cervthorlumb_ventral_early, ident = "dI3g")
+dA1 <- WhichCells(Cervthorlumb_ventral_early, ident = "dA1-like")
+v3a <- WhichCells(Cervthorlumb_ventral_early, ident = "v3a")
+v3b <- WhichCells(Cervthorlumb_ventral_early, ident = "v3b")
+v3c <- WhichCells(Cervthorlumb_ventral_early, ident = "v3c")
+v3d <- WhichCells(Cervthorlumb_ventral_early, ident = "v3d")
+v3e <- WhichCells(Cervthorlumb_ventral_early, ident = "v3e")
+v3f <- WhichCells(Cervthorlumb_ventral_early, ident = "v3f")
+v3ffox1 <- WhichCells(Cervthorlumb_ventral_early, ident = "v3f-Foxa2-1")
+v3ffox2 <- WhichCells(Cervthorlumb_ventral_early, ident = "v3f-Foxa2-2")
+v2a5 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a5")
+v2a6 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a6")
+v2a7 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a7")
+v2a8 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a8")
+v2a9 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a9")
+v2aImm <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a-Immature")
+v3Imm <- WhichCells(Cervthorlumb_ventral_early, ident = "v3-Immature")
+v0vv3Imm <- WhichCells(Cervthorlumb_ventral_early, ident = "v0v/v3-Immature")
+dI1a <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1a")
+dI1b <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1b")
+dI1b2 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1b*")
+dI1d <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1d")
+dI1e <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1e")
+dI1f <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1f")
+dI1g <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1g")
+dI1h <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1h")
+dI1i <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1i")
+dI1LCN <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1-LCN")
+dI1ccl <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1c-CL")
+dI1ct1 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1c-Thor1")
+dI1ct2 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1c-Thor2")
+dI1ct3 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1c-Thor3")
+dI1c <- WhichCells(Cervthorlumb_ventral_early, ident = "dI1c")
+dI5a1 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI5a-1")
+dI5a2 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI5a-2")
+dI5b1 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI5b-1")
+dI5b2 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI5b-2")
+dI5c1 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI5c-1")
+dI5c2 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI5c-2")
+dI5c3 <- WhichCells(Cervthorlumb_ventral_early, ident = "dI5c-3")
+v2a1 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a1")
+v2a2 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a2")
+v2a3 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a3")
+v2a4 <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a4")
+dA3dB3 <- WhichCells(Cervthorlumb_ventral_early, ident = "dA3/dB3")
+v2a3L <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a3-Lumb")
+v2a4C <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a4-Cerv")
+v2a4T <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a4-Thor")
+v2a4L <- WhichCells(Cervthorlumb_ventral_early, ident = "v2a4-Lumb")
+```
+
+```{r}
+#Finer detail annotation of five early-ventral groups: dI5, v2a-early, v0v-early, late-born inhibitory and late-born excitatory.
+#Cell lists will be used to annotate the final dataset second-level annotations.
+
+#Division1a - di5 (As annotated above)
+Cervthorlumb_ventral_early <- SetIdent(Cervthorlumb_ventral_early, value = "integrated_snn_res.32")
+Cervthorlumb_ventral_early_dI5 <- subset(Cervthorlumb_ventral_early, idents = c(23,181,169,19))
+DefaultAssay(Cervthorlumb_ventral_early_dI5) <- "RNA"
+Cervthorlumb_ventral_early_dI5 <- NormalizeData(Cervthorlumb_ventral_early_dI5)
+Cervthorlumb_ventral_early_dI5 <- FindVariableFeatures(Cervthorlumb_ventral_early_dI5, selection.method = "vst", nfeatures = 2000)
+Cervthorlumb_ventral_early_dI5[["percent.mt"]] <- PercentageFeatureSet(Cervthorlumb_ventral_early_dI5, pattern = "^mt-")
+Cervthorlumb_ventral_early_dI5 <- ScaleData(Cervthorlumb_ventral_early_dI5, vars.to.regress = c("percent.mt", "nFeature_RNA", "nCount_RNA"))
+DefaultAssay(Cervthorlumb_ventral_early_dI5) <- "integrated"
+Cervthorlumb_ventral_early_dI5 <- RunPCA(Cervthorlumb_ventral_early_dI5, features = VariableFeatures(object = Cervthorlumb_ventral_early_dI5), npcs = 90)
+DimHeatmap(Cervthorlumb_ventral_early_dI5, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_dI5, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_dI5, dims = 31:45, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_dI5, dims = 46:60, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_dI5, dims = 61:75, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_dI5, dims = 76:90, cells = 500, balanced = TRUE)
+ElbowPlot(Cervthorlumb_ventral_early_dI5, ndims = 90)
+
+DefaultAssay(Cervthorlumb_ventral_early_dI5) <- "integrated"
+Cervthorlumb_ventral_early_dI5 <- FindNeighbors(Cervthorlumb_ventral_early_dI5, reduction = "pca", dims = 1:10)
+Cervthorlumb_ventral_early_dI5 <- FindClusters(Cervthorlumb_ventral_early_dI5, resolution = 0.5)
+Cervthorlumb_ventral_early_dI5 <- FindClusters(Cervthorlumb_ventral_early_dI5, resolution = 1)
+Cervthorlumb_ventral_early_dI5 <- FindClusters(Cervthorlumb_ventral_early_dI5, resolution = 2)
+Cervthorlumb_ventral_early_dI5 <- FindClusters(Cervthorlumb_ventral_early_dI5, resolution = 4)
+Cervthorlumb_ventral_early_dI5 <- FindClusters(Cervthorlumb_ventral_early_dI5, resolution = 8)
+Cervthorlumb_ventral_early_dI5 <- FindClusters(Cervthorlumb_ventral_early_dI5, resolution = 16)
+Cervthorlumb_ventral_early_dI5 <- FindClusters(Cervthorlumb_ventral_early_dI5, resolution = 32)
+Cervthorlumb_ventral_early_dI5 <- RunUMAP(Cervthorlumb_ventral_early_dI5, reduction = "pca", dims = 1:10)
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "integrated_snn_res.0.5", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "integrated_snn_res.1", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "integrated_snn_res.2", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "integrated_snn_res.4", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "integrated_snn_res.8", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "integrated_snn_res.16", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "integrated_snn_res.32", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "segment", label = T)
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "orig.ident", label = T)
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "neurontypes_ev", label = T)
+
+#Add cell-type annotations to $neurontypes metadata based on the identity of resolution 0.5 clusters from FindMarkers.
+Cervthorlumb_ventral_early_dI5$neurontypes_dI5 <- plyr::mapvalues(
+    x = Cervthorlumb_ventral_early_dI5$integrated_snn_res.1,
+    from = c(8,7,3,6,1,4,0,5,2), 
+    to = c("dI5a-1", "dI5a-2", "dI5a-2", "dI5b-1", "dI5b-2", "dI5c-1", "dI5c-2", "dI5c-2", "dI5c-3"))
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "neurontypes_dI5", label = T, label.size = 3)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "segment", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "timepoint", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_dI5, reduction = "umap", group.by = "integrated_snn_res.1", label = T, label.size = 2)+NoLegend()
+
+DefaultAssay(Cervthorlumb_ventral_early_dI5) <- "RNA"
+Cervthorlumb_ventral_early_dI5 <- SetIdent(Cervthorlumb_ventral_early_dI5, value = "neurontypes_dI5")
+dI5a1 <- WhichCells(Cervthorlumb_ventral_early_dI5, ident = "dI5a-1")
+dI5a2 <- WhichCells(Cervthorlumb_ventral_early_dI5, ident = "dI5a-2")
+dI5b1 <- WhichCells(Cervthorlumb_ventral_early_dI5, ident = "dI5b-1")
+dI5b2 <- WhichCells(Cervthorlumb_ventral_early_dI5, ident = "dI5b-2")
+dI5c1 <- WhichCells(Cervthorlumb_ventral_early_dI5, ident = "dI5c-1")
+dI5c2 <- WhichCells(Cervthorlumb_ventral_early_dI5, ident = "dI5c-2")
+dI5c3 <- WhichCells(Cervthorlumb_ventral_early_dI5, ident = "dI5c-3")
+
+
+#Division1b - v2a (As annotated above)
+Cervthorlumb_ventral_early <- SetIdent(Cervthorlumb_ventral_early, value = "integrated_snn_res.32")
+Cervthorlumb_ventral_early_v2a <- subset(Cervthorlumb_ventral_early, idents = c(112, 160, 16, 176, 33, 132, 42, 166))
+DefaultAssay(Cervthorlumb_ventral_early_v2a) <- "RNA"
+Cervthorlumb_ventral_early_v2a <- NormalizeData(Cervthorlumb_ventral_early_v2a)
+Cervthorlumb_ventral_early_v2a <- FindVariableFeatures(Cervthorlumb_ventral_early_v2a, selection.method = "vst", nfeatures = 2000)
+Cervthorlumb_ventral_early_v2a[["percent.mt"]] <- PercentageFeatureSet(Cervthorlumb_ventral_early_v2a, pattern = "^mt-")
+Cervthorlumb_ventral_early_v2a <- ScaleData(Cervthorlumb_ventral_early_v2a, vars.to.regress = c("percent.mt", "nFeature_RNA", "nCount_RNA"))
+DefaultAssay(Cervthorlumb_ventral_early_v2a) <- "integrated"
+Cervthorlumb_ventral_early_v2a <- RunPCA(Cervthorlumb_ventral_early_v2a, features = VariableFeatures(object = Cervthorlumb_ventral_early_v2a), npcs = 90)
+DimHeatmap(Cervthorlumb_ventral_early_v2a, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_v2a, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_v2a, dims = 31:45, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_v2a, dims = 46:60, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_v2a, dims = 61:75, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_v2a, dims = 76:90, cells = 500, balanced = TRUE)
+ElbowPlot(Cervthorlumb_ventral_early_v2a, ndims = 90)
+DefaultAssay(Cervthorlumb_ventral_early_v2a) <- "integrated"
+Cervthorlumb_ventral_early_v2a <- FindNeighbors(Cervthorlumb_ventral_early_v2a, reduction = "pca", dims = 1:12)
+Cervthorlumb_ventral_early_v2a <- FindClusters(Cervthorlumb_ventral_early_v2a, resolution = 0.5)
+Cervthorlumb_ventral_early_v2a <- FindClusters(Cervthorlumb_ventral_early_v2a, resolution = 1)
+Cervthorlumb_ventral_early_v2a <- FindClusters(Cervthorlumb_ventral_early_v2a, resolution = 2)
+Cervthorlumb_ventral_early_v2a <- FindClusters(Cervthorlumb_ventral_early_v2a, resolution = 4)
+Cervthorlumb_ventral_early_v2a <- FindClusters(Cervthorlumb_ventral_early_v2a, resolution = 8)
+Cervthorlumb_ventral_early_v2a <- FindClusters(Cervthorlumb_ventral_early_v2a, resolution = 16)
+Cervthorlumb_ventral_early_v2a <- FindClusters(Cervthorlumb_ventral_early_v2a, resolution = 32)
+Cervthorlumb_ventral_early_v2a <- RunUMAP(Cervthorlumb_ventral_early_v2a, reduction = "pca", dims = 1:12)
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "integrated_snn_res.0.5", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "integrated_snn_res.1", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "integrated_snn_res.2", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "integrated_snn_res.4", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "integrated_snn_res.8", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "integrated_snn_res.16", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "integrated_snn_res.32", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "segment", label = T)
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "orig.ident", label = T)
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "neurontypes_ev", label = T)
+
+#Add cell-type annotations to $neurontypes metadata based on the identity of resolution 0.5 clusters from FindMarkers.
+Cervthorlumb_ventral_early_v2a$neurontypes_v2a <- plyr::mapvalues(
+    x = Cervthorlumb_ventral_early_v2a$integrated_snn_res.2,
+    from = c(11,2,13,6,3,1, 4,8,0,5,10,7,9,12), 
+    to = c("v2a1","v2a1","dA3/dB3","v2a2","v2a2", "v2a3", "v2a4-Lumb", "v2a4", "v2a4", "v2a4-Cerv", "v2a4-Thor", "v2a4-Thor", "dA3/dB3", "v2a3-Lumb"))
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "neurontypes_v2a", label = T, label.size = 3)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "segment", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "timepoint", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v2a, reduction = "umap", group.by = "integrated_snn_res.2", label = T, label.size = 2)+NoLegend()
+
+DefaultAssay(Cervthorlumb_ventral_early_v2a) <- "RNA"
+Cervthorlumb_ventral_early_v2a <- SetIdent(Cervthorlumb_ventral_early_v2a, value = "neurontypes_v2a")
+v2a1 <- WhichCells(Cervthorlumb_ventral_early_v2a, ident = "v2a1")
+v2a2 <- WhichCells(Cervthorlumb_ventral_early_v2a, ident = "v2a2")
+v2a3 <- WhichCells(Cervthorlumb_ventral_early_v2a, ident = "v2a3")
+v2a4 <- WhichCells(Cervthorlumb_ventral_early_v2a, ident = "v2a4")
+dA3dB3 <- WhichCells(Cervthorlumb_ventral_early_v2a, ident = "dA3/dB3")
+v2a3L <- WhichCells(Cervthorlumb_ventral_early_v2a, ident = "v2a3-Lumb")
+v2a4C <- WhichCells(Cervthorlumb_ventral_early_v2a, ident = "v2a4-Cerv")
+v2a4T <- WhichCells(Cervthorlumb_ventral_early_v2a, ident = "v2a4-Thor")
+v2a4L <- WhichCells(Cervthorlumb_ventral_early_v2a, ident = "v2a4-Lumb")
+
+#Division1c - v0v2 (As annotated above)
+Cervthorlumb_ventral_early <- SetIdent(Cervthorlumb_ventral_early, value = "neurontypes_ev")
+Cervthorlumb_ventral_early_v0v2 <- subset(Cervthorlumb_ventral_early, idents = c("v0v1", "v0v2", "v0v3"))
+DefaultAssay(Cervthorlumb_ventral_early_v0v2) <- "RNA"
+Cervthorlumb_ventral_early_v0v2 <- NormalizeData(Cervthorlumb_ventral_early_v0v2)
+Cervthorlumb_ventral_early_v0v2 <- FindVariableFeatures(Cervthorlumb_ventral_early_v0v2, selection.method = "vst", nfeatures = 2000)
+Cervthorlumb_ventral_early_v0v2[["percent.mt"]] <- PercentageFeatureSet(Cervthorlumb_ventral_early_v0v2, pattern = "^mt-")
+Cervthorlumb_ventral_early_v0v2 <- ScaleData(Cervthorlumb_ventral_early_v0v2, vars.to.regress = c("percent.mt", "nFeature_RNA", "nCount_RNA"))
+DefaultAssay(Cervthorlumb_ventral_early_v0v2) <- "integrated"
+Cervthorlumb_ventral_early_v0v2 <- RunPCA(Cervthorlumb_ventral_early_v0v2, features = VariableFeatures(object = Cervthorlumb_ventral_early_v0v2), npcs = 90)
+DimHeatmap(Cervthorlumb_ventral_early_v0v2, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_v0v2, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_v0v2, dims = 31:45, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_v0v2, dims = 46:60, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_v0v2, dims = 61:75, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_v0v2, dims = 76:90, cells = 500, balanced = TRUE)
+ElbowPlot(Cervthorlumb_ventral_early_v0v2, ndims = 90)
+DefaultAssay(Cervthorlumb_ventral_early_v0v2) <- "integrated"
+Cervthorlumb_ventral_early_v0v2 <- FindNeighbors(Cervthorlumb_ventral_early_v0v2, reduction = "pca", dims = 1:9)
+Cervthorlumb_ventral_early_v0v2 <- FindClusters(Cervthorlumb_ventral_early_v0v2, resolution = 0.5)
+Cervthorlumb_ventral_early_v0v2 <- FindClusters(Cervthorlumb_ventral_early_v0v2, resolution = 1)
+Cervthorlumb_ventral_early_v0v2 <- FindClusters(Cervthorlumb_ventral_early_v0v2, resolution = 2)
+Cervthorlumb_ventral_early_v0v2 <- FindClusters(Cervthorlumb_ventral_early_v0v2, resolution = 4)
+Cervthorlumb_ventral_early_v0v2 <- FindClusters(Cervthorlumb_ventral_early_v0v2, resolution = 8)
+Cervthorlumb_ventral_early_v0v2 <- FindClusters(Cervthorlumb_ventral_early_v0v2, resolution = 16)
+#Cervthorlumb_ventral_early_v0v2 <- FindClusters(Cervthorlumb_ventral_early_v0v2, resolution = 32)
+Cervthorlumb_ventral_early_v0v2 <- RunUMAP(Cervthorlumb_ventral_early_v0v2, reduction = "pca", dims = 1:9)
+DimPlot(Cervthorlumb_ventral_early_v0v2, reduction = "umap", group.by = "integrated_snn_res.0.5", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v0v2, reduction = "umap", group.by = "integrated_snn_res.1", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v0v2, reduction = "umap", group.by = "integrated_snn_res.2", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v0v2, reduction = "umap", group.by = "integrated_snn_res.4", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v0v2, reduction = "umap", group.by = "integrated_snn_res.8", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v0v2, reduction = "umap", group.by = "integrated_snn_res.16", label = T)+NoLegend()
+#DimPlot(Cervthorlumb_ventral_early_v0v2, reduction = "umap", group.by = "integrated_snn_res.32", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_v0v2, reduction = "umap", group.by = "segment", label = T)
+DimPlot(Cervthorlumb_ventral_early_v0v2, reduction = "umap", group.by = "orig.ident", label = T)
+DimPlot(Cervthorlumb_ventral_early_v0v2, reduction = "umap", group.by = "neurontypes_ev", label = T)
+
+Cervthorlumb_ventral_early_v0v2$neurontypes_v0v2 <- plyr::mapvalues(
+    x = Cervthorlumb_ventral_early_v0v2$integrated_snn_res.2,
+    from = c(2,6,9,10,5,0,11,7,1,8,3,4), 
+    to = c("v0v1-a", "v0v1-b", "v0v1-b", "v3c-Lumb1", "v0v1-c", "v0v2-a", "v0v2-b", "v0v3-a", "v0v3-b", "v0v3-b", "Onecut3-Exc", "Onecut3-Exc"))
+DimPlot(Cervthorlumb_ventral_early_v0v2, reduction = "umap", group.by = "neurontypes_v0v2", label = T, label.size = 3)+NoLegend()
+
+DefaultAssay(Cervthorlumb_ventral_early_v0v2) <- "RNA"
+Cervthorlumb_ventral_early_v0v2 <- SetIdent(Cervthorlumb_ventral_early_v0v2, value = "neurontypes_v0v2")
+v0v1a <- WhichCells(Cervthorlumb_ventral_early_v0v2, ident = "v0v1-a")
+v0v1b <- WhichCells(Cervthorlumb_ventral_early_v0v2, ident = "v0v1-b")
+v0v1c <- WhichCells(Cervthorlumb_ventral_early_v0v2, ident = "v0v1-c")
+v0v2a <- WhichCells(Cervthorlumb_ventral_early_v0v2, ident = "v0v2-a")
+v0v2b <- WhichCells(Cervthorlumb_ventral_early_v0v2, ident = "v0v2-b")
+v0v3a <- WhichCells(Cervthorlumb_ventral_early_v0v2, ident = "v0v3-a")
+v0v3b <- WhichCells(Cervthorlumb_ventral_early_v0v2, ident = "v0v3-b")
+v3c_lumb1 <- WhichCells(Cervthorlumb_ventral_early_v0v2, ident = "v3c-Lumb1")
+OC3_Exc <- WhichCells(Cervthorlumb_ventral_early_v0v2, ident = "Onecut3-Exc")
+
+#When remapped; remove v0v1/2/3 from previous mapping
+
+#Division1d - late-inhibitory-ventral (As annotated above)
+Cervthorlumb_ventral_early <- SetIdent(Cervthorlumb_ventral_early, value = "neurontypes_ev")
+Cervthorlumb_ventral_early_latein <- subset(Cervthorlumb_ventral_early, idents = c("pv1", "v1-Immature", "v1m", "dI6/v0d-Immature", "v0d6", "v0d7", "dI6/v0d-Late", "dI6k", "v1l"))
+DefaultAssay(Cervthorlumb_ventral_early_latein) <- "RNA"
+Cervthorlumb_ventral_early_latein <- NormalizeData(Cervthorlumb_ventral_early_latein)
+Cervthorlumb_ventral_early_latein <- FindVariableFeatures(Cervthorlumb_ventral_early_latein, selection.method = "vst", nfeatures = 2000)
+Cervthorlumb_ventral_early_latein[["percent.mt"]] <- PercentageFeatureSet(Cervthorlumb_ventral_early_latein, pattern = "^mt-")
+Cervthorlumb_ventral_early_latein <- ScaleData(Cervthorlumb_ventral_early_latein, vars.to.regress = c("percent.mt", "nFeature_RNA", "nCount_RNA"))
+DefaultAssay(Cervthorlumb_ventral_early_latein) <- "integrated"
+Cervthorlumb_ventral_early_latein <- RunPCA(Cervthorlumb_ventral_early_latein, features = VariableFeatures(object = Cervthorlumb_ventral_early_latein), npcs = 90)
+DimHeatmap(Cervthorlumb_ventral_early_latein, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_latein, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_latein, dims = 31:45, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_latein, dims = 46:60, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_latein, dims = 61:75, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_latein, dims = 76:90, cells = 500, balanced = TRUE)
+ElbowPlot(Cervthorlumb_ventral_early_latein, ndims = 90)
+DefaultAssay(Cervthorlumb_ventral_early_latein) <- "integrated"
+Cervthorlumb_ventral_early_latein <- FindNeighbors(Cervthorlumb_ventral_early_latein, reduction = "pca", dims = 1:35)
+Cervthorlumb_ventral_early_latein <- FindClusters(Cervthorlumb_ventral_early_latein, resolution = 0.5)
+Cervthorlumb_ventral_early_latein <- FindClusters(Cervthorlumb_ventral_early_latein, resolution = 1)
+Cervthorlumb_ventral_early_latein <- FindClusters(Cervthorlumb_ventral_early_latein, resolution = 2)
+Cervthorlumb_ventral_early_latein <- FindClusters(Cervthorlumb_ventral_early_latein, resolution = 4)
+Cervthorlumb_ventral_early_latein <- FindClusters(Cervthorlumb_ventral_early_latein, resolution = 8)
+Cervthorlumb_ventral_early_latein <- RunUMAP(Cervthorlumb_ventral_early_latein, reduction = "pca", dims = 1:35)
+DimPlot(Cervthorlumb_ventral_early_latein, reduction = "umap", group.by = "integrated_snn_res.0.5", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_latein, reduction = "umap", group.by = "integrated_snn_res.1", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_latein, reduction = "umap", group.by = "integrated_snn_res.2", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_latein, reduction = "umap", group.by = "integrated_snn_res.4", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_latein, reduction = "umap", group.by = "integrated_snn_res.8", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_latein, reduction = "umap", group.by = "segment", label = T)
+DimPlot(Cervthorlumb_ventral_early_latein, reduction = "umap", group.by = "orig.ident", label = T)
+DimPlot(Cervthorlumb_ventral_early_latein, reduction = "umap", group.by = "neurontypes_ev", label = T)
+
+Cervthorlumb_ventral_early_latein$neurontypes_latein <- plyr::mapvalues(
+    x = Cervthorlumb_ventral_early_latein$integrated_snn_res.8,
+    from = c(27,23,19,32,29,0,12,10,34,25,22,4,24,30,16,21,7,13,38, 28,26,2,36,5,1,37,9,33,15,31,6,8,11,3,20,17,39,35,14,18), 
+    to = c("dI6k-1","dI6k-1","dI6k-1","dI6k-1","v0d6","v0d6","v0d6","v1l","v1l", "pv1", "pv1", "dI6-Immature", "dI6k-2","dI6l-1", "dI6l-1", "dI6l-2", "dI6l-3", "v0d-Immature", "v0d-Immature", "v0d6", "v0d7", "v0d7", "v0d7", "v0d7", "v1-Immature", "v1-Immature", "v1-Immature", "v1-Immature", "v1-Immature", "v1-Immature", "v1-Immature", "v1m", "v1m", "v1n", "v1n", "v1n", "v1n", "v1n", "v1n", "v1n"))
+DimPlot(Cervthorlumb_ventral_early_latein, reduction = "umap", group.by = "neurontypes_latein", label = T, label.size = 4)+NoLegend()
+
+DefaultAssay(Cervthorlumb_ventral_early_latein) <- "RNA"
+Cervthorlumb_ventral_early_latein <- SetIdent(Cervthorlumb_ventral_early_latein, value = "neurontypes_latein")
+latein_dI6k_1 <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "dI6k-1")
+latein_dI6k_2 <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "dI6k-2")
+latein_dI6l_1 <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "dI6l-1")
+latein_dI6l_2 <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "dI6l-2")
+latein_dI6l_3 <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "dI6l-3")
+latein_dI6_imm <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "dI6-Immature")
+latein_v0d6 <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "v0d6")
+latein_v0d7 <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "v0d7")
+latein_v0d_imm <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "v0d-Immature")
+latein_v1l <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "v1l")
+latein_v1m <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "v1m")
+latein_v1n <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "v1n")
+latein_v1_imm <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "v1-Immature")
+latein_pv1 <- WhichCells(Cervthorlumb_ventral_early_latein, ident = "pv1")
+
+#Division1e - late-excitatory-ventral (As annotated above)
+Cervthorlumb_ventral_early <- SetIdent(Cervthorlumb_ventral_early, value = "neurontypes_ev")
+Cervthorlumb_ventral_early_lateex <- subset(Cervthorlumb_ventral_early, idents = c("v3-Immature", "v0v/v3-Immature", "v0v7", "v3f", "v3f-Foxa2-1", "v3f-Foxa2-2"))
+DefaultAssay(Cervthorlumb_ventral_early_lateex) <- "RNA"
+Cervthorlumb_ventral_early_lateex <- NormalizeData(Cervthorlumb_ventral_early_lateex)
+Cervthorlumb_ventral_early_lateex <- FindVariableFeatures(Cervthorlumb_ventral_early_lateex, selection.method = "vst", nfeatures = 2000)
+Cervthorlumb_ventral_early_lateex[["percent.mt"]] <- PercentageFeatureSet(Cervthorlumb_ventral_early_lateex, pattern = "^mt-")
+Cervthorlumb_ventral_early_lateex <- ScaleData(Cervthorlumb_ventral_early_lateex, vars.to.regress = c("percent.mt", "nFeature_RNA", "nCount_RNA"))
+DefaultAssay(Cervthorlumb_ventral_early_lateex) <- "integrated"
+Cervthorlumb_ventral_early_lateex <- RunPCA(Cervthorlumb_ventral_early_lateex, features = VariableFeatures(object = Cervthorlumb_ventral_early_lateex), npcs = 90)
+DimHeatmap(Cervthorlumb_ventral_early_lateex, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_lateex, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_lateex, dims = 31:45, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_lateex, dims = 46:60, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_lateex, dims = 61:75, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_ventral_early_lateex, dims = 76:90, cells = 500, balanced = TRUE)
+ElbowPlot(Cervthorlumb_ventral_early_lateex, ndims = 90)
+DefaultAssay(Cervthorlumb_ventral_early_lateex) <- "integrated"
+Cervthorlumb_ventral_early_lateex <- FindNeighbors(Cervthorlumb_ventral_early_lateex, reduction = "pca", dims = 1:15)
+Cervthorlumb_ventral_early_lateex <- FindClusters(Cervthorlumb_ventral_early_lateex, resolution = 0.5)
+Cervthorlumb_ventral_early_lateex <- FindClusters(Cervthorlumb_ventral_early_lateex, resolution = 1)
+Cervthorlumb_ventral_early_lateex <- FindClusters(Cervthorlumb_ventral_early_lateex, resolution = 2)
+Cervthorlumb_ventral_early_lateex <- FindClusters(Cervthorlumb_ventral_early_lateex, resolution = 4)
+Cervthorlumb_ventral_early_lateex <- FindClusters(Cervthorlumb_ventral_early_lateex, resolution = 8)
+Cervthorlumb_ventral_early_lateex <- RunUMAP(Cervthorlumb_ventral_early_lateex, reduction = "pca", dims = 1:15)
+DimPlot(Cervthorlumb_ventral_early_lateex, reduction = "umap", group.by = "integrated_snn_res.0.5", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_lateex, reduction = "umap", group.by = "integrated_snn_res.1", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_lateex, reduction = "umap", group.by = "integrated_snn_res.2", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_lateex, reduction = "umap", group.by = "integrated_snn_res.4", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_lateex, reduction = "umap", group.by = "integrated_snn_res.8", label = T)+NoLegend()
+DimPlot(Cervthorlumb_ventral_early_lateex, reduction = "umap", group.by = "segment", label = T)
+DimPlot(Cervthorlumb_ventral_early_lateex, reduction = "umap", group.by = "orig.ident", label = T)
+DimPlot(Cervthorlumb_ventral_early_lateex, reduction = "umap", group.by = "neurontypes_ev", label = T)
+
+Cervthorlumb_ventral_early_lateex$neurontypes_lateex <- plyr::mapvalues(
+    x = Cervthorlumb_ventral_early_lateex$integrated_snn_res.2,
+    from = c(5,12,3,10,2,1,8,4,6,11,0,7,9), 
+    to = c("v0v-Immature", "v0v7", "v0v7", "v0v7", "v3-Immature", "v3-Immature", "v3f", "v3f", "v3f", "v3f", "v3f-Foxa2-2", "v3f-Foxa2-1", "v3f-Foxa2-1"))
+DimPlot(Cervthorlumb_ventral_early_lateex, reduction = "umap", group.by = "neurontypes_lateex", label = T, label.size = 4)+NoLegend()
+
+DefaultAssay(Cervthorlumb_ventral_early_lateex) <- "RNA"
+
+Cervthorlumb_ventral_early_lateex <- SetIdent(Cervthorlumb_ventral_early_lateex, value = "neurontypes_lateex")
+lateex_v3Imm <- WhichCells(Cervthorlumb_ventral_early_lateex, ident = "v3-Immature")
+lateex_v0vImm <- WhichCells(Cervthorlumb_ventral_early_lateex, ident = "v0v-Immature")
+lateex_v0v7 <- WhichCells(Cervthorlumb_ventral_early_lateex, ident = "v0v7")
+lateex_v3f <- WhichCells(Cervthorlumb_ventral_early_lateex, ident = "v3f")
+lateex_v3f_foxa2_1 <- WhichCells(Cervthorlumb_ventral_early_lateex, ident = "v3f-Foxa2-1")
+lateex_v3f_foxa2_2 <- WhichCells(Cervthorlumb_ventral_early_lateex, ident = "v3f-Foxa2-2")
+```
+
+```{r}
+#Add dI5/v2a/v0v/early-inhibitory-late/early-excitatory-late subcluster identities to ventral_early object
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "neurontypes_ev", label = T) + NoLegend()
+Cervthorlumb_ventral_early@meta.data$neurontypes_ev <- ifelse(Cervthorlumb_ventral_early@meta.data$neurontypes_ev != "null", Cervthorlumb_ventral_early@meta.data$neurontypes_ev,
+                                    ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% dI5a1, "dI5a-1",
+                                    ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% dI5a2, "dI5a-2",
+                                      ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% dI5b1, "dI5b-1",
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% dI5b2, "dI5b-2",
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% dI5c1, "dI5c-1",
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% dI5c2, "dI5c-2",
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% dI5c3, "dI5c-3",
+                                              
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% v2a1, "v2a1",
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% v2a2, "v2a2",
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% v2a3, "v2a3",
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% v2a4, "v2a4",
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% dA3dB3, "dA3/dB3",
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% v2a3L, "v2a3-Lumb",
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% v2a4C, "v2a4-Cerv",
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% v2a4T, "v2a4-Thor",
+                                       ifelse(rownames(Cervthorlumb_ventral_early@meta.data) %in% v2a4L, "v2a4-Lumb",
+                                              
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% v0v2a, "v0v2-a",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% v0v2b, "v0v2-b",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% v0v3a, "v0v3-a",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% v0v3b, "v0v3-b",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% v3c_lumb1, "v3c-Lumb1",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% OC3_Exc, "Onecut3-Exc",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_v1n, "v1n",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_dI6k_2, "dI6k-2",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_dI6l_1, "dI6l-1",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_dI6l_2, "dI6l-2",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_dI6l_3, "dI6l-3",
+                                              
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_pv1, "pv1", #recoded pv1
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_v1_imm, "v1-Immature", #recoded v1-Immature
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_v1m, "v1m",
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_dI6_imm, "dI6-Immature", #recoded dI6/v0d-Immature
+                                              
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% v0v1a, "v0v1-a", #recoded old v0v1
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% v0v1b, "v0v1-b", #recoded old v0v2
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% v0v1c, "v0v1-c", #recoded old v0v3
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% lateex_v0v7, "v0v7", #recoded v0v7
+                                              
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% lateex_v3f, "v3f", #reclassified v3f
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% lateex_v3f_foxa2_1, "v3f-Foxa2-1", #reclassified v3f-Foxa2-1
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% lateex_v3f_foxa2_2, "v3f-Foxa2-2",#reclassified v3f-Foxa2-2
+                                          
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_dI6k_1, "dI6k-1", #recoded dI6k
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_v0d6, "v0d6", #recoded v0d6
+                                        ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_v0d7, "v0d7",#recoded v0d7
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_v0d_imm, "v0d-Immature", #recoded dI6/v0d-late
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_v1l, "v1l", #recoded v1l
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% latein_v1n, "v1n", #recoded v1l
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% lateex_v3Imm, "v3-Immature", #reannotated v3f-Imm
+                                       ifelse(rownames(Cervthorlumb_neurons@meta.data) %in% lateex_v0vImm, "v0v-Immature", #reannotated v0v/v3-Imm
+                                                  
+                                           "null"       
+                                          )))))))))))))))))))))))))))))))))))))))))))))))
+DimPlot(Cervthorlumb_ventral_early, reduction = "umap", group.by = "neurontypes_ev", label = T) + NoLegend()
+```
+
+```{r}
+saveRDS(Cervthorlumb_ventral_early, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/cervlumb_ventral_early.RDS")
+```
+
