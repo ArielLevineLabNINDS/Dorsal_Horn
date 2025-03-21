@@ -12,7 +12,6 @@
 
 library(tidyverse)
 library(stringr)
-library(ggplot2)
 library(oce) #Contains binAverage() function
 
 filelist <- list.files(path = "/Users/roomerb/Documents/Experiments/Pixel-intensity-calculations/Raw_data", pattern = ".csv", full.names = TRUE)
