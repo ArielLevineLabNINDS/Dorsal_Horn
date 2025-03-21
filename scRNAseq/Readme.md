@@ -49,5 +49,15 @@ Prior to these steps, 30 replicate 10X Chromium 3' GEX runs from cervical, thora
 - Each subsequent family is reclustered alone, annotated, and the resulting annotations mapped back to the total spinal neurons object. Top level clusters which are evidently from adjacent families are included when reclustering each family in order to provide context for what features define a useful point of demarcation between each family.
 - Cardinal neuron annotations are also remapped onto the total neurons object here as well, with the caveat that they have not been validated.
 
-Part 7 TBD
+[Part 7: Final annotations clean-up](Roome2025_scrnaseq_part7_final_annotations_cleanup.Rmd)
+- 
+- Reappraise motor neuron classifications prior to Xenium label transfer (not analyzed further).
+- Some potential DRG clusters and low-quality clusters are removed.
+- Some annotations are merged for use with RCTD for annotating Xenium neurons (see appropriate section).
+- Metadata classes are defined to produce dendrograms and to define biological replicates.
+- A reappraisal of neuron annotations is done. Harmonization of the letter and number subtype nomenclature is done to avoid confusion. Some Zic-variant relationships are reclassified after reappraisal of Zic levels in comparison to closest neighbor clusters.
+- PC loadings of dILA, dILB and constituent families are exported for examination - Zic genes are prominent in all dIL families.
+- Figure plots and dIL neuron marker lists are exported.
+- Export contingency tables for refined neuron types and biological replicates
+- End of single-cell RNA-sequencing analysis for Roome et al., 2025.
 
