@@ -42,3 +42,12 @@ Prior to these steps, 30 replicate 10X Chromium 3' GEX runs from cervical, thora
 - Early-born and ventral neurons (cardinal groups dI1-6, v0-v3, MN, HB9-interneurons, CSF-contacting neurons, etc) are clustered at 180PCs at resolution 32 and annotated. These annotations were not analyzed in this work, but must be reported as they are the basis for the annotations of the broader cardinal neuron classes. It is possible that these annotations result from over or under-clustering of early-born / ventral neurons, and should not be considered discrete cell types at this stage.
 - Due to the high diversity here, occasional groups were subsetted and re-clustered to help refine annotations.
 - Annotations were exported to be subsequently added to the metadata of the dataset containing all neurons.
+
+[Part 6: Analysis and annotation of dorsal late-born interneurons (dIL)](Roome2025_scrnaseq_part6_annotation-of-dIL.Rmd)
+-
+- dIL neurons are clustered using 150 PCs and annotated based on resolution 32 clusters. Six families of dILA and dILB correspond roughly to dorsal horn neurons previously identified, with logically-progressing temporal transcription factor expression profiles. Furthermore, adjacent clusters are annotated with either progressive numbers or progressive letters based on their relationships with each other. For dILB, clusters are largely sequential, varying with TTF expression, and are lettered. For dILA the same relationship exists, but also cluster trajectories which vary based on Zic expression. As Zic expression is a dominating second tier of variation, letters here denote low-to-high Zic expression.
+- Each subsequent family is reclustered alone, annotated, and the resulting annotations mapped back to the total spinal neurons object. Top level clusters which are evidently from adjacent families are included when reclustering each family in order to provide context for what features define a useful point of demarcation between each family.
+- Cardinal neuron annotations are also remapped onto the total neurons object here as well, with the caveat that they have not been validated.
+
+Part 7 TBD
+
