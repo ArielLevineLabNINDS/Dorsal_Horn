@@ -1,0 +1,636 @@
+
+
+```{r}
+## Part 1 - Produce average pixel intensities in 80 horizontal bins of the superficial dorsal horn, and normalize to 100% for each section to produce a relative laminar distribution of cells by depth. Data is stored in "PixelIntensityData" table, with each row representing a single measurement, and metadata columns containing experiment, animal, hemisection, genotype and gene (cell-type) metadata for each measurement.
+
+#Data preparation in Fiji:
+      # 1) Open 2nd resolution of 1024x1024 or 3rd res of 2069x2069 confocal .czi images in Fiji, produce z-stack projection by averaging pixel intensity. 
+      # 2) Select channel of interest; generally done on 2nd resolution of confocal .czi opened in Fiji
+      # 3) Place ROI over breadth of lamina I-IV, with the border of V defined as the most dorsal of the dorsal horn bundles, and the width of the ROI rectangle being as parallel to the pial surface as possible. Width should be roughly 1/3 of the dorsal horn width.
+      # 4) Threshold to include only faintest RNA Scope signal but exclude background, and apply
+      # 5) Obtain avg pixel intensity by distance histogram, export as "PixelIntensityData.csv"; ready for use in the following code:
+
+library(tidyverse)
+library(stringr)
+library(ggplot2)
+library(oce) #Contains binAverage() function
+
+filelist <- list.files(path = "/Users/roomerb/Documents/Experiments/Pixel-intensity-calculations/Raw_data", pattern = ".csv", full.names = TRUE)
+filelist
+
+Variance <- data.frame(Experiment=as.character(),Animal=as.character(),Hemisection=as.character(),Gene=as.character(), Range=as.numeric())
+
+for(x in filelist){
+    filename <- x
+    filepathtable <- read.csv(x)
+    filepathtable <- as.data.frame(filepathtable)
+    #
+    experimentID <- str_sub(x, start = 76, end = 83)
+    animalID <- paste0(str_sub(x, start = 85, end = 88), str_sub(x, start = 95, end = 98))
+    hemisectionID <- paste0(str_sub(x, start = 99, end = 99), str_sub(x, start = 101, end = 101))
+    #genotypeID <- "TBD"
+    geneID <- str_sub(x, start = 103, end = 106)
+    
+    Rangecalc <- filepathtable
+    Rangecalc <- Rangecalc %>% mutate(csum = cumsum(Gray_Value))
+    Rangecalc$csum <- Rangecalc$csum/sum(Rangecalc$Gray_Value)*100
+    Binrange <- (min(which(Rangecalc$csum > 60)) - min(which(Rangecalc$csum > 40)))/nrow(Rangecalc)*100
+    outs <- data.frame(Experiment=as.character(),Animal=as.character(),Hemisection=as.character(),Gene=as.character(), Range=as.numeric())
+    outs[1,1] <- experimentID
+    outs[1,2] <- animalID
+    outs[1,3] <- hemisectionID
+    outs[1,4] <- geneID
+    outs[1,5] <- Binrange
+    Variance <- rbind(outs, Variance)
+    }
+
+VarianceGsx12KO <- Variance %>% filter(Experiment == "Gsx12KO-")
+VarianceGsx12KO_Kcnip2 <- VarianceGsx12KO %>% filter(Gene == "Kcni")
+VarianceGsx12KO_Osr1 <- VarianceGsx12KO %>% filter(Gene == "Osr1")
+
+Animalist_Gsx12KO_Kcnip2 <- unique(VarianceGsx12KO_Kcnip2$Animal)
+VarianceGsx12KO_Kcnip2_animal <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+for (X in Animalist_Gsx12KO_Kcnip2) {
+  dfsub <- VarianceGsx12KO_Kcnip2 %>% filter(Animal == X)
+  range <- mean(dfsub$Range)
+  outs <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+  outs[1,1] <- X
+  outs[1,2] <- range
+  VarianceGsx12KO_Kcnip2_animal <- rbind(outs, VarianceGsx12KO_Kcnip2_animal)
+}
+
+Animalist_Gsx12KO_Osr1 <- unique(VarianceGsx12KO_Osr1$Animal)
+VarianceGsx12KO_Osr1_animal <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+for (X in Animalist_Gsx12KO_Osr1) {
+  dfsub <- VarianceGsx12KO_Osr1 %>% filter(Animal == X)
+  range <- mean(dfsub$Range)
+  outs <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+  outs[1,1] <- X
+  outs[1,2] <- range
+  VarianceGsx12KO_Osr1_animal <- rbind(outs, VarianceGsx12KO_Osr1_animal)
+}
+
+
+VariancePtf1aKO <- Variance %>% filter(Experiment == "Ptf1aKO-")
+VariancePtf1aKO_Plscr5 <- VariancePtf1aKO %>% filter(Gene == "Plsc")
+VariancePtf1aKO_Pou4f3 <- VariancePtf1aKO %>% filter(Gene == "Pou4")
+VariancePtf1aKO_Grp <- VariancePtf1aKO %>% filter(Gene == "Grp.")
+VariancePtf1aKO_Grpr <- VariancePtf1aKO %>% filter(Gene == "Grpr")
+VariancePtf1aKO_Alkal2 <- VariancePtf1aKO %>% filter(Gene == "Alka")
+
+Animalist_Ptf1aKO_Plscr5 <- unique(VariancePtf1aKO_Plscr5$Animal)
+VariancePtf1aKO_Plscr5_animal <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+for (X in Animalist_Ptf1aKO_Plscr5) {
+  dfsub <- VariancePtf1aKO_Plscr5 %>% filter(Animal == X)
+  range <- mean(dfsub$Range)
+  outs <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+  outs[1,1] <- X
+  outs[1,2] <- range
+  VariancePtf1aKO_Plscr5_animal <- rbind(outs, VariancePtf1aKO_Plscr5_animal)
+}
+
+Animalist_Ptf1aKO_Pou4f3 <- unique(VariancePtf1aKO_Pou4f3$Animal)
+VariancePtf1aKO_Pou4f3_animal <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+for (X in Animalist_Ptf1aKO_Pou4f3) {
+  dfsub <- VariancePtf1aKO_Pou4f3 %>% filter(Animal == X)
+  range <- mean(dfsub$Range)
+  outs <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+  outs[1,1] <- X
+  outs[1,2] <- range
+  VariancePtf1aKO_Pou4f3_animal <- rbind(outs, VariancePtf1aKO_Pou4f3_animal)
+}
+
+Animalist_Ptf1aKO_Grp <- unique(VariancePtf1aKO_Grp$Animal)
+VariancePtf1aKO_Grp_animal <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+for (X in Animalist_Ptf1aKO_Grp) {
+  dfsub <- VariancePtf1aKO_Grp %>% filter(Animal == X)
+  range <- mean(dfsub$Range)
+  outs <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+  outs[1,1] <- X
+  outs[1,2] <- range
+  VariancePtf1aKO_Grp_animal <- rbind(outs, VariancePtf1aKO_Grp_animal)
+}
+
+Animalist_Ptf1aKO_Grpr <- unique(VariancePtf1aKO_Grpr$Animal)
+VariancePtf1aKO_Grpr_animal <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+for (X in Animalist_Ptf1aKO_Grpr) {
+  dfsub <- VariancePtf1aKO_Grpr %>% filter(Animal == X)
+  range <- mean(dfsub$Range)
+  outs <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+  outs[1,1] <- X
+  outs[1,2] <- range
+  VariancePtf1aKO_Grpr_animal <- rbind(outs, VariancePtf1aKO_Grpr_animal)
+}
+
+Animalist_Ptf1aKO_Alkal2 <- unique(VariancePtf1aKO_Alkal2$Animal)
+VariancePtf1aKO_Alkal2_animal <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+for (X in Animalist_Ptf1aKO_Alkal2) {
+  dfsub <- VariancePtf1aKO_Alkal2 %>% filter(Animal == X)
+  range <- mean(dfsub$Range)
+  outs <- data.frame(Animal=as.character(), MeanRange=as.numeric())
+  outs[1,1] <- X
+  outs[1,2] <- range
+  VariancePtf1aKO_Alkal2_animal <- rbind(outs, VariancePtf1aKO_Alkal2_animal)
+}
+
+BinNamesList <- c("Bin01", "Bin02", "Bin03", "Bin04", "Bin05", "Bin06", "Bin07", "Bin08", "Bin09", "Bin10",
+                  "Bin11", "Bin12", "Bin13", "Bin14", "Bin15", "Bin16", "Bin17", "Bin18", "Bin19", "Bin20",
+                  "Bin21", "Bin22", "Bin23", "Bin24", "Bin25", "Bin26", "Bin27", "Bin28", "Bin29", "Bin30",
+                  "Bin31", "Bin32", "Bin33", "Bin34", "Bin35", "Bin36", "Bin37", "Bin38", "Bin39", "Bin40",
+                  "Bin41", "Bin42", "Bin43", "Bin44", "Bin45", "Bin46", "Bin47", "Bin48", "Bin49", "Bin50",
+                  "Bin51", "Bin52", "Bin53", "Bin54", "Bin55", "Bin56", "Bin57", "Bin58", "Bin59", "Bin60",
+                  "Bin61", "Bin62", "Bin63", "Bin64", "Bin65", "Bin66", "Bin67", "Bin68", "Bin69", "Bin70",
+                  "Bin71", "Bin72", "Bin73", "Bin74", "Bin75", "Bin76", "Bin77", "Bin78", "Bin79", "Bin80")
+
+dataList <- lapply(filelist,function(x){
+#First line of csv apply code
+    filename <- x
+    filepathtable <- read.csv(x)
+    filepathtable <- as.data.frame(filepathtable)
+    #
+    experimentID <- str_sub(x, start = 76, end = 83)
+    animalID <- paste0(str_sub(x, start = 85, end = 88), str_sub(x, start = 95, end = 98))
+    hemisectionID <- paste0(str_sub(x, start = 99, end = 99), str_sub(x, start = 101, end = 101))
+    genotypeID <- "TBD"
+    geneID <- str_sub(x, start = 103, end = 106)
+    
+      #Normalize X (distance) to percent
+      filepathtable[,1] <- filepathtable[,1]/max(filepathtable[,1])*100
+
+      #Bin-average Y-values (intensity)
+      filepathtable_bin<-binAverage(filepathtable[,1], filepathtable[,2], 0, 100, 1.25, include.lowest = TRUE)
+      #Normalize Y values (intensity) to fraction of total pixel intensity
+      filepathtable_bin$y<-filepathtable_bin$y/sum(filepathtable_bin$y)*100
+
+      filepathtable_bin <- as.data.frame(t(as.data.frame(filepathtable_bin)))
+      filepathtable_bin<-filepathtable_bin[-1,]
+      rownames(filepathtable_bin)<-NULL
+      colnames(filepathtable_bin) <- BinNamesList
+
+      filepathtable_bin <- filepathtable_bin %>% mutate(Experiment=c(experimentID),    .before=Bin01)
+      filepathtable_bin <- filepathtable_bin %>% mutate(Animal=c(animalID),            .before=Bin01)
+      filepathtable_bin <- filepathtable_bin %>% mutate(Hemisection=c(hemisectionID),  .before=Bin01)
+      filepathtable_bin <- filepathtable_bin %>% mutate(Genotype=c(genotypeID),        .before=Bin01)
+      filepathtable_bin <- filepathtable_bin %>% mutate(Gene=c(geneID),                .before=Bin01)
+
+      return(filepathtable_bin)
+})
+
+
+
+PixelIntensityData <- bind_rows(dataList, .id = "column_label")
+PixelIntensityData
+#End part 1 code: "PixelIntensityData.csv"
+write.csv(PixelIntensityData, "/Users/roomerb/PixelIntensityData.csv")
+
+## - Part 2: Averaging measurement replicates per animal:
+  ## For each experiment/gene combo, this code averages all individual measurements for each animal and eliminates the Hemisection metadata category. Each row of this table represents data collected from a single animal and will be treated as a single biological replicate for downstream statistical purposes. This table iteration is named "PixelIntensityData_ColAvg"
+
+##Create unique lists of Experimental conditions, Animal subjects, and genes used
+Experiments <- unique(PixelIntensityData$Experiment)
+Animals <- unique(PixelIntensityData$Animal)
+Genes <- unique(PixelIntensityData$Gene)
+  
+##Column-averaging - Experiments level
+ColAvg <- lapply(Experiments, function(i){   
+    
+  ##Column-averaging - Genes level (Inside Experiments)
+  ColAvg2 <- lapply(Genes, function(j){   
+    
+    ##Column-averaging - Animal level (inside Genes)
+    ColAvg3 <- lapply(Animals, function(k){
+        Rowindices <- which(PixelIntensityData$Experiment == i & PixelIntensityData$Gene == j & PixelIntensityData$Animal == k)
+        Cycle <- if(length(Rowindices) > 0)
+           {
+              PIcycle<-as.data.frame(t(as.data.frame(colMeans(PixelIntensityData[Rowindices, c(-1,-2,-3,-4,-5,-6)]))))
+              rownames(PIcycle) <- NULL
+              PIcycle <- PIcycle %>% mutate(Experiment=i,    .before=Bin01)
+              PIcycle <- PIcycle %>% mutate(Animal = k,    .before=Bin01)
+              PIcycle <- PIcycle %>% mutate(Gene=j,    .before=Bin01)
+              print(PIcycle)
+           } else {
+                print(NA)
+           }
+                 return(Cycle)
+      })
+    ColAvg3<-ColAvg3[!is.na(ColAvg3)]
+    ColAvg3 <- bind_rows(ColAvg3, .id = "column_label")
+    return(ColAvg3)
+    ##Column-averaging - Animals level (inside Genes) END
+    
+  })
+  ColAvg2<-ColAvg2[map_lgl(ColAvg2, ~ nrow(.) > 0)]
+  ColAvg2 <- bind_rows(ColAvg2, .id = "column_label")
+  ##Column-averaging - Genes level (Inside Experiments) END
+})
+##Column-averaging - Experiments level END
+
+PixelIntensityData_ColAvg <- bind_rows(ColAvg, .id = "column_label")
+PixelIntensityData_ColAvg
+
+PixelIntensityData_ColAvg$Condition <- paste0(PixelIntensityData_ColAvg$Experiment,PixelIntensityData_ColAvg$Animal,PixelIntensityData_ColAvg$Gene)
+PixelIntensityData_ColAvg <- PixelIntensityData_ColAvg %>% relocate(Condition, .before = Experiment)
+
+write.csv(PixelIntensityData_ColAvg, "/Users/roomerb/PixelIntensityData_ColAvg.csv")
+
+## Produce single vertical dataset for barplots & statistics input
+
+library(tibble)
+library(reshape)
+library(stringr)
+library(purrr)
+PixelIntensityData_ColAvgt <- t(PixelIntensityData_ColAvg)
+PixelIntensityData_ColAvgt<-PixelIntensityData_ColAvgt[-c(1,3,4,5),]
+PixelIntensityData_ColAvgt
+colnames(PixelIntensityData_ColAvgt) <- PixelIntensityData_ColAvgt[1,]; PixelIntensityData_ColAvgt<-PixelIntensityData_ColAvgt[-c(1),]
+PixelIntensityData_ColAvgt <- as.data.frame(PixelIntensityData_ColAvgt)
+PixelIntensityData_ColAvgt <- tibble::rownames_to_column(PixelIntensityData_ColAvgt, "Bins")
+PixelIntensityData_ColAvgt <- as.data.frame(PixelIntensityData_ColAvgt)
+PixelIntensityData_ColAvgt$Num_bin <- nrow(PixelIntensityData_ColAvgt):1
+PixelIntensityData_ColAvgt$Num_bin <- PixelIntensityData_ColAvgt$Num_bin*1.25
+
+PixelIntensityData_ColAvgt_melt <- melt(PixelIntensityData_ColAvgt, id = c("Bins", "Num_bin"))
+PixelIntensityData_ColAvgt_melt$Experiment <- str_sub(PixelIntensityData_ColAvgt_melt$variable, start = 1, end = 8)
+PixelIntensityData_ColAvgt_melt$Animal <- str_sub(PixelIntensityData_ColAvgt_melt$variable, start = 9, end = 16)
+PixelIntensityData_ColAvgt_melt$Gene <- str_sub(PixelIntensityData_ColAvgt_melt$variable, start = 17, end = 20)
+PixelIntensityData_ColAvgt_melt$variable <- NULL
+PixelIntensityData_ColAvgt_melt <- PixelIntensityData_ColAvgt_melt %>% relocate(value, .after = Gene)
+PixelIntensityData_ColAvgt_vert <- PixelIntensityData_ColAvgt_melt
+write.csv(PixelIntensityData_ColAvgt_vert, "/Users/roomerb/PixelIntensityData_ColAvg_vertical.csv")
+
+#End part 2 code: "PixelIntensityData_ColAvg.csv"; "PixelIntensityData_ColAvg_vertical.csv"
+
+library(tidyverse)
+## = Part 3: Add genotype data to processed tables
+PixelIntensityData_ColAvgt_vert$Genotype <- PixelIntensityData_ColAvgt_vert$Animal
+PixelIntensityData_ColAvgt_vert$Genotype <- recode(PixelIntensityData_ColAvgt_vert$Genotype, 
+                                                        'Lit2An01' = "Gsx_1KO_2KO",
+                                                        'Lit2An02' = "Gsx_1HE_2HE",
+                                                        'Lit2An03' = "Gsx_1KO_2KO",
+                                                        'Lit2An04' = "Gsx_1WT_2HE",
+                                                        'Lit2An05' = "Gsx_1WT_2KO",
+                                                        'Lit2An06' = "Gsx_1KO_2HE",
+                                                        'Lit2An07' = "Gsx_1HE_2KO",
+                                                        'Lit2An08' = "Gsx_1KO_2HE",
+                                                        'Lit2An09' = "Gsx_1HE_2WT",
+                                                        'Lit2An10' = "Gsx_1HE_2HE",
+                                                        'Lit2An11' = "Gsx_1WT_2HE",
+                                                        'Lit2An12' = "Gsx_1HE_2HE",
+                                                        'Lit2An13' = "Gsx_1HE_2KO",
+                                             
+                                                        'Lit3An01' = "Gsx_1HE_2KO",
+                                                        'Lit3An03' = "Gsx_1HE_2HE",
+                                                        'Lit3An04' = "Gsx_1KO_2KO",
+                                                        'Lit3An05' = "Gsx_1HE_2HE",
+                                                        'Lit3An08' = "Gsx_1HE_2KO",
+                                                        'Lit3An09' = "Gsx_1HE_2HE",
+                                                        'Lit3An10' = "Gsx_1HE_2KO",
+                                                        'Lit3An11' = "Gsx_1WT_2WT",
+                                                        'Lit3An12' = "Gsx_1HE_2WT",
+                                             
+                                                        'Lit4An01' = "Gsx_1HE_2KO",
+                                                        'Lit4An02' = "Gsx_1WT_2KO",
+                                                        'Lit4An03' = "Gsx_1HE_2KO",
+                                                        'Lit4An04' = "Gsx_1KO_2KO",
+                                                        'Lit4An05' = "Gsx_1KO_2HE",
+                                                        'Lit4An06' = "Gsx_1HE_2WT",
+                                                        'Lit4An08' = "Gsx_1HE_2WT",
+                                                        'Lit4An10' = "Gsx_1HE_2KO",
+                                                        'Lit4An11' = "Gsx_1HE_2HE",
+                                                        'Lit4An12' = "Gsx_1WT_2WT",
+                                                        'Lit4An13' = "Gsx_1WT_2HE",
+                                             
+                                                        '65B1WT01' = "Ptf1a_WT",
+                                                        '65B1WT02' = "Ptf1a_WT",
+                                                        '65B2WT01' = "Ptf1a_WT",
+                                                        '65B2WT02' = "Ptf1a_WT",
+                                                        '66B1WT01' = "Ptf1a_WT",
+                                                        '66B1WT02' = "Ptf1a_WT",
+                                                        '66B2WT01' = "Ptf1a_WT",
+                                                        '66B2WT02' = "Ptf1a_WT",
+                                                        '66B2WT03' = "Ptf1a_WT",
+                                                        '40B1WT01' = "Ptf1a_WT",
+                                                        '40B1WT02' = "Ptf1a_WT",
+                                                        '40B1WT03' = "Ptf1a_WT",
+                                                        '40B1WT04' = "Ptf1a_WT",
+                                             
+                                                        '65B1HE01' = "Ptf1a_HE",
+                                                        '65B1HE02' = "Ptf1a_HE",
+                                                        '65B2HE01' = "Ptf1a_HE",
+                                                        '65B2HE02' = "Ptf1a_HE",
+                                                        '66B1HE01' = "Ptf1a_HE",
+                                                        '66B1HE02' = "Ptf1a_HE",
+                                                        '66B2HE01' = "Ptf1a_HE",
+                                                        '66B2HE02' = "Ptf1a_HE",
+                                             
+                                                        '65B1KO01' = "Ptf1a_KO",
+                                                        '65B1KO02' = "Ptf1a_KO",
+                                                        '65B2KO01' = "Ptf1a_KO",
+                                                        '65B2KO02' = "Ptf1a_KO",
+                                                        '66B1KO01' = "Ptf1a_KO",
+                                                        '66B1KO02' = "Ptf1a_KO",
+                                                        '66B2KO01' = "Ptf1a_KO",
+                                                        '66B2KO02' = "Ptf1a_KO",
+                                                        '66B2KO03' = "Ptf1a_KO",
+                                                        '40B1KO01' = "Ptf1a_KO",
+                                                        '40B1KO02' = "Ptf1a_KO",
+                                                        '40B1KO03' = "Ptf1a_KO",
+                                             
+                                             
+                                                        '1393CL05' = "Pax3Isl2_Ctrl",
+                                                        '2_83CLA5' = "Pax3Isl2_Ctrl",
+                                                        '2_83CLA6' = "Pax3Isl2_Ctrl",
+                                                        '2_83CLB5' = "Pax3Isl2_Ctrl",
+                                                        '2_83CLA4' = "Pax3Isl2_Ctrl",
+
+                                                        '1393DT06' = "Pax3Isl2_Ablt",
+                                                        '2_83DTA1' = "Pax3Isl2_Ablt",
+                                                        '2_83DTA3' = "Pax3Isl2_Ablt",
+                                                        '2_83DTB2' = "Pax3Isl2_Ablt",
+                                                        '2_83DTB3' = "Pax3Isl2_Ablt"
+                                              )
+
+PixelIntensityData_ColAvg$Genotype <- PixelIntensityData_ColAvg$Animal
+PixelIntensityData_ColAvg$Genotype <- recode(PixelIntensityData_ColAvg$Genotype, 
+                                                        'Lit2An01' = "Gsx_1KO_2KO",
+                                                        'Lit2An02' = "Gsx_1HE_2HE",
+                                                        'Lit2An03' = "Gsx_1KO_2KO",
+                                                        'Lit2An04' = "Gsx_1WT_2HE",
+                                                        'Lit2An05' = "Gsx_1WT_2KO",
+                                                        'Lit2An06' = "Gsx_1KO_2HE",
+                                                        'Lit2An07' = "Gsx_1HE_2KO",
+                                                        'Lit2An08' = "Gsx_1KO_2HE",
+                                                        'Lit2An09' = "Gsx_1HE_2WT",
+                                                        'Lit2An10' = "Gsx_1HE_2HE",
+                                                        'Lit2An11' = "Gsx_1WT_2HE",
+                                                        'Lit2An12' = "Gsx_1HE_2HE",
+                                                        'Lit2An13' = "Gsx_1HE_2KO",
+                                             
+                                                        'Lit3An01' = "Gsx_1HE_2KO",
+                                                        'Lit3An03' = "Gsx_1HE_2HE",
+                                                        'Lit3An04' = "Gsx_1KO_2KO",
+                                                        'Lit3An05' = "Gsx_1HE_2HE",
+                                                        'Lit3An08' = "Gsx_1HE_2KO",
+                                                        'Lit3An09' = "Gsx_1HE_2HE",
+                                                        'Lit3An10' = "Gsx_1HE_2KO",
+                                                        'Lit3An11' = "Gsx_1WT_2WT",
+                                                        'Lit3An12' = "Gsx_1HE_2WT",
+                                             
+                                                        'Lit4An01' = "Gsx_1HE_2KO",
+                                                        'Lit4An02' = "Gsx_1WT_2KO",
+                                                        'Lit4An03' = "Gsx_1HE_2KO",
+                                                        'Lit4An04' = "Gsx_1KO_2KO",
+                                                        'Lit4An05' = "Gsx_1KO_2HE",
+                                                        'Lit4An06' = "Gsx_1HE_2WT",
+                                                        'Lit4An08' = "Gsx_1HE_2WT",
+                                                        'Lit4An10' = "Gsx_1HE_2KO",
+                                                        'Lit4An11' = "Gsx_1HE_2HE",
+                                                        'Lit4An12' = "Gsx_1WT_2WT",
+                                                        'Lit4An13' = "Gsx_1WT_2HE",
+                                             
+                                                        '65B1WT01' = "Ptf1a_WT",
+                                                        '65B1WT02' = "Ptf1a_WT",
+                                                        '65B2WT01' = "Ptf1a_WT",
+                                                        '65B2WT02' = "Ptf1a_WT",
+                                                        '66B1WT01' = "Ptf1a_WT",
+                                                        '66B1WT02' = "Ptf1a_WT",
+                                                        '66B2WT01' = "Ptf1a_WT",
+                                                        '66B2WT02' = "Ptf1a_WT",
+                                                        '66B2WT03' = "Ptf1a_WT",
+                                                        '40B1WT01' = "Ptf1a_WT",
+                                                        '40B1WT02' = "Ptf1a_WT",
+                                                        '40B1WT03' = "Ptf1a_WT",
+                                                        '40B1WT04' = "Ptf1a_WT",
+                                             
+                                                        '65B1HE01' = "Ptf1a_HE",
+                                                        '65B1HE02' = "Ptf1a_HE",
+                                                        '65B2HE01' = "Ptf1a_HE",
+                                                        '65B2HE02' = "Ptf1a_HE",
+                                                        '66B1HE01' = "Ptf1a_HE",
+                                                        '66B1HE02' = "Ptf1a_HE",
+                                                        '66B2HE01' = "Ptf1a_HE",
+                                                        '66B2HE02' = "Ptf1a_HE",
+                                             
+                                                        '65B1KO01' = "Ptf1a_KO",
+                                                        '65B1KO02' = "Ptf1a_KO",
+                                                        '65B2KO01' = "Ptf1a_KO",
+                                                        '65B2KO02' = "Ptf1a_KO",
+                                                        '66B1KO01' = "Ptf1a_KO",
+                                                        '66B1KO02' = "Ptf1a_KO",
+                                                        '66B2KO01' = "Ptf1a_KO",
+                                                        '66B2KO02' = "Ptf1a_KO",
+                                                        '66B2KO03' = "Ptf1a_KO",
+                                                        '40B1KO01' = "Ptf1a_KO",
+                                                        '40B1KO02' = "Ptf1a_KO",
+                                                        '40B1KO03' = "Ptf1a_KO",
+                                             
+                                                        '1393CL05' = "Pax3Isl2_Ctrl",
+                                                        '2_83CLA5' = "Pax3Isl2_Ctrl",
+                                                        '2_83CLA6' = "Pax3Isl2_Ctrl",
+                                                        '2_83CLB5' = "Pax3Isl2_Ctrl",
+                                                        '2_83CLA4' = "Pax3Isl2_Ctrl",
+
+                                                        '1393DT06' = "Pax3Isl2_Ablt",
+                                                        '2_83DTA1' = "Pax3Isl2_Ablt",
+                                                        '2_83DTA2' = "Pax3Isl2_Ablt",
+                                                        '2_83DTA3' = "Pax3Isl2_Ablt",
+                                                        '2_83DTB2' = "Pax3Isl2_Ablt",
+                                                        '2_83DTB3' = "Pax3Isl2_Ablt",
+                                                        '2_83DTB4' = "Pax3Isl2_Ablt"
+                                              )
+
+table(PixelIntensityData_ColAvg$Genotype)
+table(PixelIntensityData_ColAvg$Gene, PixelIntensityData_ColAvg$Genotype)
+PixelIntensityData_ColAvg <- PixelIntensityData_ColAvg %>% relocate(Genotype, .before = Gene)
+write.csv(PixelIntensityData_ColAvg, "/Users/roomerb/PixelIntensityData_ColAvg.csv")
+write.csv(PixelIntensityData_ColAvgt_vert, "/Users/roomerb/PixelIntensityData_ColAvg_vertical.csv")
+
+#Ensure numeric variables are classified as such
+PixelIntensityData_ColAvgt_vert <- PixelIntensityData_ColAvgt_vert %>% mutate_at(c('value', 'Num_bin'), as.numeric)
+
+#Produce 'groupfactor', which will designate each separately plotted dataset (the combination of each animal and each gene assayed). Set colors manually before exporting each plot.
+PixelIntensityData_ColAvgt_vert$groupfactor <- paste0(PixelIntensityData_ColAvgt_vert$Gene, PixelIntensityData_ColAvgt_vert$Animal)
+```
+
+```{r}
+## - Part 4.1: Analysis of Ptf1a:KO
+
+## - Part 4.1.1: Subsetting Ptf1a:KO data
+
+#Extract Ptf1a data
+PixelIntensityData_ColAvgt_vert_Ptf1a <- PixelIntensityData_ColAvgt_vert %>% filter(Experiment == "Ptf1aKO-")
+PixelIntensityData_ColAvg_Ptf1a <- PixelIntensityData_ColAvg %>% filter(Experiment == "Ptf1aKO-")
+
+#Split by measured gene/protein
+PixelIntensityData_ColAvg_Ptf1a_Grp <- PixelIntensityData_ColAvg_Ptf1a %>% filter(Gene == "Grp.")
+PixelIntensityData_ColAvg_Ptf1a_Grpr <- PixelIntensityData_ColAvg_Ptf1a %>% filter(Gene == "Grpr")
+PixelIntensityData_ColAvg_Ptf1a_Pou4f3 <- PixelIntensityData_ColAvg_Ptf1a %>% filter(Gene == "Pou4")
+PixelIntensityData_ColAvg_Ptf1a_Plscr5 <- PixelIntensityData_ColAvg_Ptf1a %>% filter(Gene == "Plsc")
+PixelIntensityData_ColAvg_Ptf1a_Alkal2 <- PixelIntensityData_ColAvg_Ptf1a %>% filter(Gene == "Alka")
+PixelIntensityData_ColAvg_Ptf1a_Trka <- PixelIntensityData_ColAvg_Ptf1a %>% filter(Gene == "Trka")
+
+#Identify unique genotypes
+unique(PixelIntensityData_ColAvgt_vert_Ptf1a$Genotype)
+
+#Split by gene_genotype
+PixelIntensityData_ColAvg_Ptf1a_Grp_WT <- PixelIntensityData_ColAvg_Ptf1a_Grp %>% filter(Genotype == "Ptf1a_WT")
+PixelIntensityData_ColAvg_Ptf1a_Grpr_WT <- PixelIntensityData_ColAvg_Ptf1a_Grpr %>% filter(Genotype == "Ptf1a_WT")
+PixelIntensityData_ColAvg_Ptf1a_Pou4f3_WT <- PixelIntensityData_ColAvg_Ptf1a_Pou4f3 %>% filter(Genotype == "Ptf1a_WT")
+PixelIntensityData_ColAvg_Ptf1a_Plscr5_WT <- PixelIntensityData_ColAvg_Ptf1a_Plscr5 %>% filter(Genotype == "Ptf1a_WT")
+PixelIntensityData_ColAvg_Ptf1a_Alkal2_WT <- PixelIntensityData_ColAvg_Ptf1a_Alkal2 %>% filter(Genotype == "Ptf1a_WT")
+PixelIntensityData_ColAvg_Ptf1a_Trka_WT <- PixelIntensityData_ColAvg_Ptf1a_Trka %>% filter(Genotype == "Ptf1a_WT")
+PixelIntensityData_ColAvg_Ptf1a_Grp_KO <- PixelIntensityData_ColAvg_Ptf1a_Grp %>% filter(Genotype == "Ptf1a_KO")
+PixelIntensityData_ColAvg_Ptf1a_Grpr_KO <- PixelIntensityData_ColAvg_Ptf1a_Grpr %>% filter(Genotype == "Ptf1a_KO")
+PixelIntensityData_ColAvg_Ptf1a_Pou4f3_KO <- PixelIntensityData_ColAvg_Ptf1a_Pou4f3 %>% filter(Genotype == "Ptf1a_KO")
+PixelIntensityData_ColAvg_Ptf1a_Plscr5_KO <- PixelIntensityData_ColAvg_Ptf1a_Plscr5 %>% filter(Genotype == "Ptf1a_KO")
+PixelIntensityData_ColAvg_Ptf1a_Alkal2_KO <- PixelIntensityData_ColAvg_Ptf1a_Alkal2 %>% filter(Genotype == "Ptf1a_KO")
+PixelIntensityData_ColAvg_Ptf1a_Trka_KO <- PixelIntensityData_ColAvg_Ptf1a_Trka %>% filter(Genotype == "Ptf1a_KO")
+
+#Produce columns containing only bin data for each replicate; done by removing metadata and transposing
+PixelIntensityData_ColAvg_Ptf1a_Grp_WT <- t(PixelIntensityData_ColAvg_Ptf1a_Grp_WT[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Ptf1a_Grpr_WT <- t(PixelIntensityData_ColAvg_Ptf1a_Grpr_WT[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Ptf1a_Pou4f3_WT <- t(PixelIntensityData_ColAvg_Ptf1a_Pou4f3_WT[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Ptf1a_Plscr5_WT <- t(PixelIntensityData_ColAvg_Ptf1a_Plscr5_WT[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Ptf1a_Alkal2_WT <- t(PixelIntensityData_ColAvg_Ptf1a_Alkal2_WT[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Ptf1a_Trka_WT <- t(PixelIntensityData_ColAvg_Ptf1a_Trka_WT[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Ptf1a_Grp_KO <- t(PixelIntensityData_ColAvg_Ptf1a_Grp_KO[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Ptf1a_Grpr_KO <- t(PixelIntensityData_ColAvg_Ptf1a_Grpr_KO[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Ptf1a_Pou4f3_KO <- t(PixelIntensityData_ColAvg_Ptf1a_Pou4f3_KO[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Ptf1a_Plscr5_KO <- t(PixelIntensityData_ColAvg_Ptf1a_Plscr5_KO[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Ptf1a_Alkal2_KO <- t(PixelIntensityData_ColAvg_Ptf1a_Alkal2_KO[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Ptf1a_Trka_KO <- t(PixelIntensityData_ColAvg_Ptf1a_Trka_KO[,-c(1,2,3,4,5,6)])
+```
+
+```{r}
+## - Part 4.2: Analysis of Gsx1/2KO
+## - Part 4.2.1: Subsetting Gsx1/2KO data
+
+#Extract Gsx1/2KO data
+PixelIntensityData_ColAvgt_vert_Gsx12KO <- PixelIntensityData_ColAvgt_vert %>% filter(Experiment == "Gsx12KO-")
+PixelIntensityData_ColAvg_Gsx12KO <- PixelIntensityData_ColAvg %>% filter(Experiment == "Gsx12KO-")
+
+#Identify unique gene sets
+unique(PixelIntensityData_ColAvgt_vert_Gsx12KO$Gene)
+
+#Split by measured gene/protein
+PixelIntensityData_ColAvg_Gsx12_Osr1 <- PixelIntensityData_ColAvg_Gsx12KO %>% filter(Gene == "Osr1")
+PixelIntensityData_ColAvg_Gsx12_Kcni <- PixelIntensityData_ColAvg_Gsx12KO %>% filter(Gene == "Kcni")
+PixelIntensityData_ColAvg_Gsx12_Trka <- PixelIntensityData_ColAvg_Gsx12KO %>% filter(Gene == "Trka")
+PixelIntensityData_ColAvg_Gsx12_Pval <- PixelIntensityData_ColAvg_Gsx12KO %>% filter(Gene == "Pval")
+PixelIntensityData_ColAvg_Gsx12_Uts2 <- PixelIntensityData_ColAvg_Gsx12KO %>% filter(Gene == "Uts2")
+PixelIntensityData_ColAvg_Gsx12_Epca <- PixelIntensityData_ColAvg_Gsx12KO %>% filter(Gene == "Epca")
+
+#Identify unique genotypes
+unique(PixelIntensityData_ColAvgt_vert_Gsx12KO$Genotype)
+
+#Split by gene_genotype
+PixelIntensityData_ColAvg_Gsx12_Osr1_Gsx_1HE_2WT <- PixelIntensityData_ColAvg_Gsx12_Osr1 %>% filter(Genotype == "Gsx_1HE_2WT")
+PixelIntensityData_ColAvg_Gsx12_Kcni_Gsx_1HE_2WT <- PixelIntensityData_ColAvg_Gsx12_Kcni %>% filter(Genotype == "Gsx_1HE_2WT")
+PixelIntensityData_ColAvg_Gsx12_Trka_Gsx_1HE_2WT <- PixelIntensityData_ColAvg_Gsx12_Trka %>% filter(Genotype == "Gsx_1HE_2WT")
+PixelIntensityData_ColAvg_Gsx12_Pval_Gsx_1HE_2WT <- PixelIntensityData_ColAvg_Gsx12_Pval %>% filter(Genotype == "Gsx_1HE_2WT")
+PixelIntensityData_ColAvg_Gsx12_Uts2_Gsx_1HE_2WT <- PixelIntensityData_ColAvg_Gsx12_Uts2 %>% filter(Genotype == "Gsx_1HE_2WT")
+PixelIntensityData_ColAvg_Gsx12_Epca_Gsx_1HE_2WT <- PixelIntensityData_ColAvg_Gsx12_Epca %>% filter(Genotype == "Gsx_1HE_2WT")
+PixelIntensityData_ColAvg_Gsx12_Osr1_Gsx_1KO_2KO <- PixelIntensityData_ColAvg_Gsx12_Osr1 %>% filter(Genotype == "Gsx_1KO_2KO")
+PixelIntensityData_ColAvg_Gsx12_Kcni_Gsx_1KO_2KO <- PixelIntensityData_ColAvg_Gsx12_Kcni %>% filter(Genotype == "Gsx_1KO_2KO")
+PixelIntensityData_ColAvg_Gsx12_Trka_Gsx_1KO_2KO <- PixelIntensityData_ColAvg_Gsx12_Trka %>% filter(Genotype == "Gsx_1KO_2KO")
+PixelIntensityData_ColAvg_Gsx12_Pval_Gsx_1KO_2KO <- PixelIntensityData_ColAvg_Gsx12_Pval %>% filter(Genotype == "Gsx_1KO_2KO")
+PixelIntensityData_ColAvg_Gsx12_Uts2_Gsx_1KO_2KO <- PixelIntensityData_ColAvg_Gsx12_Uts2 %>% filter(Genotype == "Gsx_1KO_2KO")
+PixelIntensityData_ColAvg_Gsx12_Epca_Gsx_1KO_2KO <- PixelIntensityData_ColAvg_Gsx12_Epca %>% filter(Genotype == "Gsx_1KO_2KO")
+
+#Produce columns containing only bin data for each replicate; done by removing metadata and transposing
+PixelIntensityData_ColAvg_Gsx12_Osr1_Gsx_1HE_2WT <- t(PixelIntensityData_ColAvg_Gsx12_Osr1_Gsx_1HE_2WT[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Gsx12_Kcni_Gsx_1HE_2WT <- t(PixelIntensityData_ColAvg_Gsx12_Kcni_Gsx_1HE_2WT[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Gsx12_Trka_Gsx_1HE_2WT <- t(PixelIntensityData_ColAvg_Gsx12_Trka_Gsx_1HE_2WT[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Gsx12_Pval_Gsx_1HE_2WT <- t(PixelIntensityData_ColAvg_Gsx12_Pval_Gsx_1HE_2WT[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Gsx12_Uts2_Gsx_1HE_2WT <- t(PixelIntensityData_ColAvg_Gsx12_Uts2_Gsx_1HE_2WT[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Gsx12_Epca_Gsx_1HE_2WT <- t(PixelIntensityData_ColAvg_Gsx12_Epca_Gsx_1HE_2WT[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Gsx12_Osr1_Gsx_1KO_2KO <- t(PixelIntensityData_ColAvg_Gsx12_Osr1_Gsx_1KO_2KO[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Gsx12_Kcni_Gsx_1KO_2KO <- t(PixelIntensityData_ColAvg_Gsx12_Kcni_Gsx_1KO_2KO[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Gsx12_Trka_Gsx_1KO_2KO <- t(PixelIntensityData_ColAvg_Gsx12_Trka_Gsx_1KO_2KO[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Gsx12_Pval_Gsx_1KO_2KO <- t(PixelIntensityData_ColAvg_Gsx12_Pval_Gsx_1KO_2KO[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Gsx12_Uts2_Gsx_1KO_2KO <- t(PixelIntensityData_ColAvg_Gsx12_Uts2_Gsx_1KO_2KO[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Gsx12_Epca_Gsx_1KO_2KO <- t(PixelIntensityData_ColAvg_Gsx12_Epca_Gsx_1KO_2KO[,-c(1,2,3,4,5,6)])
+
+```
+
+```{r}
+## - Part 4.3: Analysis of Pax3:Cre; Isl2:DTA
+## - Part 4.3.1: Subsetting Pax3:Cre; Isl2:DTA data
+
+#Extract Pax3:Cre; Isl2:DTA data
+PixelIntensityData_ColAvgt_vert_Pax3DTA <- PixelIntensityData_ColAvgt_vert %>% filter(Experiment == "Pax3DTA-")
+PixelIntensityData_ColAvg_Pax3DTA <- PixelIntensityData_ColAvg %>% filter(Experiment == "Pax3DTA-")
+
+#Identify unique gene sets
+unique(PixelIntensityData_ColAvgt_vert_Pax3DTA$Gene)
+
+#Split by measured gene/protein
+PixelIntensityData_ColAvg_Pax3DTA_Kcni <- PixelIntensityData_ColAvg_Pax3DTA %>% filter(Gene == "Kcni")
+PixelIntensityData_ColAvg_Pax3DTA_Osr1 <- PixelIntensityData_ColAvg_Pax3DTA %>% filter(Gene == "Osr1")
+PixelIntensityData_ColAvg_Pax3DTA_Plsc <- PixelIntensityData_ColAvg_Pax3DTA %>% filter(Gene == "Plsc")
+PixelIntensityData_ColAvg_Pax3DTA_Pou4 <- PixelIntensityData_ColAvg_Pax3DTA %>% filter(Gene == "Pou4")
+PixelIntensityData_ColAvg_Pax3DTA_Grp <- PixelIntensityData_ColAvg_Pax3DTA %>% filter(Gene == "Grp.")
+PixelIntensityData_ColAvg_Pax3DTA_Grpr <- PixelIntensityData_ColAvg_Pax3DTA %>% filter(Gene == "Grpr")
+PixelIntensityData_ColAvg_Pax3DTA_Epca <- PixelIntensityData_ColAvg_Pax3DTA %>% filter(Gene == "Epca")
+PixelIntensityData_ColAvg_Pax3DTA_Uts2 <- PixelIntensityData_ColAvg_Pax3DTA %>% filter(Gene == "Uts2")
+
+#Identify unique genotypes
+unique(PixelIntensityData_ColAvg_Pax3DTA$Genotype)
+
+
+#Split by gene_genotype
+PixelIntensityData_ColAvg_Pax3DTA_Kcni_Ctrl <- PixelIntensityData_ColAvg_Pax3DTA_Kcni %>% filter(Genotype == "Pax3Isl2_Ctrl")
+PixelIntensityData_ColAvg_Pax3DTA_Kcni_Ablt <- PixelIntensityData_ColAvg_Pax3DTA_Kcni %>% filter(Genotype == "Pax3Isl2_Ablt")
+PixelIntensityData_ColAvg_Pax3DTA_Osr1_Ctrl <- PixelIntensityData_ColAvg_Pax3DTA_Osr1 %>% filter(Genotype == "Pax3Isl2_Ctrl")
+PixelIntensityData_ColAvg_Pax3DTA_Osr1_Ablt <- PixelIntensityData_ColAvg_Pax3DTA_Osr1 %>% filter(Genotype == "Pax3Isl2_Ablt")
+PixelIntensityData_ColAvg_Pax3DTA_Plsc_Ctrl <- PixelIntensityData_ColAvg_Pax3DTA_Plsc %>% filter(Genotype == "Pax3Isl2_Ctrl")
+PixelIntensityData_ColAvg_Pax3DTA_Plsc_Ablt <- PixelIntensityData_ColAvg_Pax3DTA_Plsc %>% filter(Genotype == "Pax3Isl2_Ablt")
+PixelIntensityData_ColAvg_Pax3DTA_Pou4_Ctrl <- PixelIntensityData_ColAvg_Pax3DTA_Pou4 %>% filter(Genotype == "Pax3Isl2_Ctrl")
+PixelIntensityData_ColAvg_Pax3DTA_Pou4_Ablt <- PixelIntensityData_ColAvg_Pax3DTA_Pou4 %>% filter(Genotype == "Pax3Isl2_Ablt")
+PixelIntensityData_ColAvg_Pax3DTA_Grp_Ctrl <- PixelIntensityData_ColAvg_Pax3DTA_Grp %>% filter(Genotype == "Pax3Isl2_Ctrl")
+PixelIntensityData_ColAvg_Pax3DTA_Grp_Ablt <- PixelIntensityData_ColAvg_Pax3DTA_Grp %>% filter(Genotype == "Pax3Isl2_Ablt")
+PixelIntensityData_ColAvg_Pax3DTA_Grpr_Ctrl <- PixelIntensityData_ColAvg_Pax3DTA_Grpr %>% filter(Genotype == "Pax3Isl2_Ctrl")
+PixelIntensityData_ColAvg_Pax3DTA_Grpr_Ablt <- PixelIntensityData_ColAvg_Pax3DTA_Grpr %>% filter(Genotype == "Pax3Isl2_Ablt")
+PixelIntensityData_ColAvg_Pax3DTA_Epca_Ctrl <- PixelIntensityData_ColAvg_Pax3DTA_Epca %>% filter(Genotype == "Pax3Isl2_Ctrl")
+PixelIntensityData_ColAvg_Pax3DTA_Epca_Ablt <- PixelIntensityData_ColAvg_Pax3DTA_Epca %>% filter(Genotype == "Pax3Isl2_Ablt")
+PixelIntensityData_ColAvg_Pax3DTA_Uts2_Ctrl <- PixelIntensityData_ColAvg_Pax3DTA_Uts2 %>% filter(Genotype == "Pax3Isl2_Ctrl")
+PixelIntensityData_ColAvg_Pax3DTA_Uts2_Ablt <- PixelIntensityData_ColAvg_Pax3DTA_Uts2 %>% filter(Genotype == "Pax3Isl2_Ablt")
+
+
+#Produce columns containing only bin data for each replicate; done by removing metadata and transposing
+PixelIntensityData_ColAvg_Pax3DTA_Kcni_Ctrl <- t(PixelIntensityData_ColAvg_Pax3DTA_Kcni_Ctrl[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Kcni_Ablt <- t(PixelIntensityData_ColAvg_Pax3DTA_Kcni_Ablt[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Osr1_Ctrl <- t(PixelIntensityData_ColAvg_Pax3DTA_Osr1_Ctrl[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Osr1_Ablt <- t(PixelIntensityData_ColAvg_Pax3DTA_Osr1_Ablt[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Plsc_Ctrl <- t(PixelIntensityData_ColAvg_Pax3DTA_Plsc_Ctrl[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Plsc_Ablt <- t(PixelIntensityData_ColAvg_Pax3DTA_Plsc_Ablt[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Pou4_Ctrl <- t(PixelIntensityData_ColAvg_Pax3DTA_Pou4_Ctrl[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Pou4_Ablt <- t(PixelIntensityData_ColAvg_Pax3DTA_Pou4_Ablt[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Grp_Ctrl <- t(PixelIntensityData_ColAvg_Pax3DTA_Grp_Ctrl[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Grp_Ablt <- t(PixelIntensityData_ColAvg_Pax3DTA_Grp_Ablt[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Grpr_Ctrl <- t(PixelIntensityData_ColAvg_Pax3DTA_Grpr_Ctrl[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Grpr_Ablt <- t(PixelIntensityData_ColAvg_Pax3DTA_Grpr_Ablt[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Epca_Ctrl <- t(PixelIntensityData_ColAvg_Pax3DTA_Epca_Ctrl[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Epca_Ablt <- t(PixelIntensityData_ColAvg_Pax3DTA_Epca_Ablt[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Uts2_Ctrl <- t(PixelIntensityData_ColAvg_Pax3DTA_Uts2_Ctrl[,-c(1,2,3,4,5,6)])
+PixelIntensityData_ColAvg_Pax3DTA_Uts2_Ablt <- t(PixelIntensityData_ColAvg_Pax3DTA_Uts2_Ablt[,-c(1,2,3,4,5,6)])
+
+#Export for plotting
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Plsc_Ctrl, "/Users/roomerb/Pixent_Pax3DTA_Plscr5_Ctrl.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Plsc_Ablt, "/Users/roomerb/Pixent_Pax3DTA_Plscr5_Ablt.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Pou4_Ctrl, "/Users/roomerb/Pixent_Pax3DTA_Pou4f3_Ctrl.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Pou4_Ablt, "/Users/roomerb/Pixent_Pax3DTA_Pou4f3_Ablt.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Grp_Ctrl, "/Users/roomerb/Pixent_Pax3DTA_Grp_Ctrl.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Grp_Ablt, "/Users/roomerb/Pixent_Pax3DTA_Grp_Ablt.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Grpr_Ctrl, "/Users/roomerb/Pixent_Pax3DTA_Grpr_Ctrl.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Grpr_Ablt, "/Users/roomerb/Pixent_Pax3DTA_Grpr_Ablt.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Kcni_Ctrl, "/Users/roomerb/Pixent_Pax3DTA_Kcnip2_Ctrl.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Kcni_Ablt, "/Users/roomerb/Pixent_Pax3DTA_Kcnip2_Ablt.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Epca_Ctrl, "/Users/roomerb/Pixent_Pax3DTA_Epcam_Ctrl.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Epca_Ablt, "/Users/roomerb/Pixent_Pax3DTA_Epcam_Ablt.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Osr1_Ctrl, "/Users/roomerb/Pixent_Pax3DTA_Osr1_Ctrl.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Osr1_Ablt, "/Users/roomerb/Pixent_Pax3DTA_Osr1_Ablt.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Uts2_Ctrl, "/Users/roomerb/Pixent_Pax3DTA_Uts2b_Ctrl.csv")
+write.csv(PixelIntensityData_ColAvg_Pax3DTA_Uts2_Ablt, "/Users/roomerb/Pixent_Pax3DTA_Uts2b_Ablt.csv")
+```
+
