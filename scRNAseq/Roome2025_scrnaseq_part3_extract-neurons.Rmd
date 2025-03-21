@@ -427,10 +427,14 @@ dev.off()
 ```{r}
 #Run on hpc - task 3:
 
-##Extraction of neurons object (Cervthorlumb_neurons) from all cells object (Cervthorlumb); done on Biowulf due to insufficient ram
+##Extraction of neurons object (Cervthorlumb_neurons) from all cells object (Cervthorlumb); done on hpc due to insufficient ram
 #Cervthorlumb <- SetIdent(Cervthorlumb, value = "integrated_snn_res.2")
 #Cervthorlumb_neurons <- subset(Cervthorlumb, idents = c(8,15,87,12,51,10,23,62,35,67,76,37,33,39,38,4,45,9,63,46,73,13,19,61,69,68,58,88,24,26,72,22,16,49,47,31,0,92,14,52,44,71,53,34,70,66,59,93,55,40,75,74,78,83))
 ##Export neurons Seurat object for future processing
-#saveRDS(Cervthorlumb_neurons,"/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/Cervthorlumb_neurons.RDS")
+#saveRDS(Cervthorlumb_neurons,"/data/roomerb/seurat/Cervthorlumb_neurons.RDS")
+#DefaultAssay(list.integrated) <- "integrated";
+#Cervthorlumb_neurons <- ScaleData(Cervthorlumb_neurons, vars.to.regress = c("nCount_RNA", "nFeature_RNA"));
+#Cervthorlumb_neurons <- RunPCA(Cervthorlumb_neurons, npcs = 90)
+#saveRDS(Cervthorlumb_neurons,"/data/roomerb/seurat/cervthorlumb_neurons_post.RDS")
 ```
 
