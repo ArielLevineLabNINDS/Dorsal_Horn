@@ -3,7 +3,10 @@
 All analysis was done in R using Seurat v4, and code is written in the following Rmd files.
 General notes on each notebook follow each link.
 
+Prior to these steps, 30 replicate 10X Chromium 3' GEX runs from cervical, thoracic or lumbar E14.5/E16.5 spinal cords were run through Cellranger mkfastq and count, with 10X Genomics' reference genome package 2020-A (mm10).
+
 [Part 1: QC and filtering](Roome2025_scrnaseq_part1_QC_filtering.Rmd)
+- 
 - Cellranger outputs (MEX format) were imported to R (Read10X)
 - CreateSeuratObject was run on MEX format data (CreateSeuratObject)
 - Biological replicates were combined if applicable (merge)
@@ -11,4 +14,11 @@ General notes on each notebook follow each link.
 - Basic [Seurat clustering vignette](https://satijalab.org/seurat/articles/pbmc3k_tutorial.html) was run to inspect distribution of cell types in each replicate. If the expected spinal cell types were not present in well differentiated clusters (e.g. in the case of poor emulsion quality resulting in many low-quality cells), then filters were raised.
 - Biological replicate Seurat objects were saved as .RDS files.
 
-Part 2: Integration of replicates
+[Part 2: Integration of replicates](Roome2025_scrnaseq_part2_Integrate-replicates.Rmd)
+- 
+- R script was run in Bash on a local cluster (bash script is commented)
+- Biological replicate Seurat objects were loaded
+- CCA Integration (Seurat v4) was run on a list of all biological replicate Seurat objects.
+- Data was scaled while regressing nCount_RNA and nFeature_RNA for the integrated Seurat object (ScaleData)
+- PCA was run using 90 PCs on the integrated Seurat object (RunPCA)
+- Integrated Seurat object was saved ('Cervthorlumb_all.RDS')
