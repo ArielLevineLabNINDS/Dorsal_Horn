@@ -16,9 +16,18 @@ Prior to these steps, 30 replicate 10X Chromium 3' GEX runs from cervical, thora
 
 [Part 2: Integration of replicates](Roome2025_scrnaseq_part2_Integrate-replicates.Rmd)
 - 
-- R script was run in Bash on a local cluster (bash script is commented)
+- R script was run in Bash on a local hpc cluster (bash script is commented)
 - Biological replicate Seurat objects were loaded
 - CCA Integration (Seurat v4) was run on a list of all biological replicate Seurat objects.
 - Data was scaled while regressing nCount_RNA and nFeature_RNA for the integrated Seurat object (ScaleData)
 - PCA was run using 90 PCs on the integrated Seurat object (RunPCA)
 - Integrated Seurat object was saved ('Cervthorlumb_all.RDS')
+
+[Part 3: Extract neurons from all spinal cells](Roome2025_scrnaseq_part3_extract-neurons.Rmd)
+- 
+- Integrated Seurat object loaded, and metadata is appended.
+- Cells are clustered with 90PCs at resolution 2. Cluster markers were run separately on hpc cluster (commented code)
+- Cluster identities are examined using FeaturePlot for top DEGs of each cluster.
+- Main spinal cord cell types assigned to $maintypes metadata category from resolution 2 clusters. Cluster markers are rerun using $maintypes on hpc cluster. (commented code)
+- Visualizations (VlnPlot, DotPlots) are exported to report processing.
+- Clusters identified as spinal cord neurons are subsetted from all neurons ('Cervthorlumb_neurons') on hpc cluster and saved (commented code).
