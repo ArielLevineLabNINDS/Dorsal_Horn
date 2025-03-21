@@ -36,4 +36,9 @@ Prior to these steps, 30 replicate 10X Chromium 3' GEX runs from cervical, thora
 -
 - Three iterative clustering and subsetting rounds are done to remove cells which are either low quality or not neurons (noted in code comments).
 
-Part 5: TBD
+[Part 5: Split dorsal and late-born neurons from early-born and ventral neurons](Roome2025_scrnaseq_part5_dorsoventral-split_examine_ventral.Rmd)
+-
+- Dorsal and late-born neurons are extracted from all neurons, with the main criterion being expression of Zic1 among Pax2/Lmx1b neurons. Each portion of the total spinal neurons dataset are saved as separate Seurat objects.
+- Early-born and ventral neurons (cardinal groups dI1-6, v0-v3, MN, HB9-interneurons, CSF-contacting neurons, etc) are clustered at 180PCs at resolution 32 and annotated. These annotations were not analyzed in this work, but must be reported as they are the basis for the annotations of the broader cardinal neuron classes. It is possible that these annotations result from over or under-clustering of early-born / ventral neurons, and should not be considered discrete cell types at this stage.
+- Due to the high diversity here, occasional groups were subsetted and re-clustered to help refine annotations.
+- Annotations were exported to be subsequently added to the metadata of the dataset containing all neurons.
