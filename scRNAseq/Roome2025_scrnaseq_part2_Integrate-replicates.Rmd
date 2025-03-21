@@ -1,0 +1,83 @@
+
+```{r}
+#Run as bash script on cluster; non-R code is commented
+##! /bin/bash
+#module load R
+#R --no-save
+#Rscript -e '
+
+library(Seurat);
+AB14 <- readRDS("/data/roomerb/seurat/14AB_all.RDS");
+CD14 <- readRDS("/data/roomerb/seurat/14CD_all.RDS");
+EF14 <- readRDS("/data/roomerb/seurat/14EF_all.RDS");
+A16 <- readRDS("/data/roomerb/seurat/16A_all.RDS");
+CD16 <- readRDS("/data/roomerb/seurat/16CD_all.RDS");
+EF16 <- readRDS("/data/roomerb/seurat/16EF_all.RDS");
+GH16 <- readRDS("/data/roomerb/seurat/16GH_all.RDS");
+TATB16 <- readRDS("/data/roomerb/seurat/16TATB_all.RDS");
+TCTD16 <- readRDS("/data/roomerb/seurat/16TCTD_all.RDS");
+TE16 <- readRDS("/data/roomerb/seurat/16TE_all.RDS");
+TF16 <- readRDS("/data/roomerb/seurat/16TF_all.RDS");
+TGTH16 <- readRDS("/data/roomerb/seurat/16TGTH_all.RDS");
+LALB16 <- readRDS("/data/roomerb/seurat/16LALB_all.RDS");
+LCLD16 <- readRDS("/data/roomerb/seurat/16LCLD_all.RDS");
+LELF16 <- readRDS("/data/roomerb/seurat/16LELF_all.RDS");
+LGLH16 <- readRDS("/data/roomerb/seurat/16LGLH_all.RDS");
+AB14;
+CD14;
+EF14;
+A16;
+CD16;
+EF16;
+GH16;
+TATB16;
+TCTD16;
+TE16;
+TF16;
+TGTH16;
+LALB16;
+LCLD16;
+LELF16;
+LGLH16;
+AB14 <- NormalizeData(AB14);
+CD14 <- NormalizeData(CD14);
+EF14 <- NormalizeData(EF14);
+A16 <- NormalizeData(A16);
+CD16 <- NormalizeData(CD16);
+EF16 <- NormalizeData(EF16);
+GH16 <- NormalizeData(GH16);
+TATB16 <- NormalizeData(TATB16);
+TCTD16 <- NormalizeData(TCTD16);
+TE16 <- NormalizeData(TE16);
+TF16 <- NormalizeData(TF16);
+TGTH16 <- NormalizeData(TGTH16);
+LALB16 <- NormalizeData(LALB16);
+LCLD16 <- NormalizeData(LCLD16);
+LELF16 <- NormalizeData(LELF16);
+LGLH16 <- NormalizeData(LGLH16);
+AB14 <- FindVariableFeatures(AB14, selection.method = "vst", nfeatures = 2000);
+CD14 <- FindVariableFeatures(CD14, selection.method = "vst", nfeatures = 2000);
+EF14 <- FindVariableFeatures(EF14, selection.method = "vst", nfeatures = 2000);
+A16 <- FindVariableFeatures(A16, selection.method = "vst", nfeatures = 2000);
+CD16 <- FindVariableFeatures(CD16, selection.method = "vst", nfeatures = 2000);
+EF16 <- FindVariableFeatures(EF16, selection.method = "vst", nfeatures = 2000);
+GH16 <- FindVariableFeatures(GH16, selection.method = "vst", nfeatures = 2000);
+TATB16 <- FindVariableFeatures(TATB16, selection.method = "vst", nfeatures = 2000);
+TCTD16 <- FindVariableFeatures(TCTD16, selection.method = "vst", nfeatures = 2000);
+TE16 <- FindVariableFeatures(TE16, selection.method = "vst", nfeatures = 2000);
+TF16 <- FindVariableFeatures(TF16, selection.method = "vst", nfeatures = 2000);
+TGTH16 <- FindVariableFeatures(TGTH16, selection.method = "vst", nfeatures = 2000);
+LALB16 <- FindVariableFeatures(LALB16, selection.method = "vst", nfeatures = 2000);
+LCLD16 <- FindVariableFeatures(LCLD16, selection.method = "vst", nfeatures = 2000);
+LELF16 <- FindVariableFeatures(LELF16, selection.method = "vst", nfeatures = 2000);
+LGLH16 <- FindVariableFeatures(LGLH16, selection.method = "vst", nfeatures = 2000);
+listall <- list(AB14, CD14, EF14, A16, CD16, EF16, GH16, TATB16, TCTD16, TE16, TF16, TGTH16, LALB16, LCLD16, LELF16, LGLH16);
+features <- SelectIntegrationFeatures(object.list = listall);
+list.anchors <- FindIntegrationAnchors(object.list = listall, anchor.features = features);
+list.integrated <- IntegrateData(anchorset = list.anchors);
+DefaultAssay(list.integrated) <- "integrated";
+list.integrated <- ScaleData(list.integrated, vars.to.regress = c("nCount_RNA", "nFeature_RNA"));
+list.integrated <- RunPCA(list.integrated, npcs = 90);
+saveRDS(list.integrated, "/data/roomerb/seurat/cervthorlumb_all.RDS")
+#'
+```
