@@ -31,3 +31,9 @@ Prior to these steps, 30 replicate 10X Chromium 3' GEX runs from cervical, thora
 - Main spinal cord cell types assigned to $maintypes metadata category from resolution 2 clusters. Cluster markers are rerun using $maintypes on hpc cluster. (commented code)
 - Visualizations (VlnPlot, DotPlots) are exported to report processing.
 - Clusters identified as spinal cord neurons are subsetted from all neurons ('Cervthorlumb_neurons') on hpc cluster, data scaling and PCA (90) are run, and saved (commented code).
+
+[Part 4: Refine neurons](Roome2025_scrnaseq_part4_refine_neurons.Rmd)
+-
+- Three iterative clustering and subsetting rounds are done to remove cells which are either low quality or not neurons (noted in code comments).
+
+Part 5: TBD
