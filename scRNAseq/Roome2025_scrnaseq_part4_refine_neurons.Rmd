@@ -1,0 +1,527 @@
+```{r}  
+library(Seurat)
+library(tidyverse)
+install.packages('devtools')
+devtools::install_github('immunogenomics/presto')
+library(presto) #Efficient Wilcoxon test with FindMarkers
+```
+
+```{r}
+#Load all neurons object. Data scaling and initial PCA run on hpc
+Cervthorlumb_neurons <- readRDS("/Users/roomerb/cervthorlumb_neurons_post.RDS")
+```
+
+#Run PCA & clustering
+```{r}
+#Principal component analysis reporting top 90 PCs
+DefaultAssay(Cervthorlumb_neurons) <- "integrated"
+Cervthorlumb_neurons <- RunPCA(Cervthorlumb_neurons, npcs = 90);
+DimHeatmap(Cervthorlumb_neurons, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 31:45, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 46:60, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 61:75, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 76:90, cells = 500, balanced = TRUE)
+ElbowPlot(Cervthorlumb_neurons, ndims = 90)
+
+#Find clusters and calculate UMAP for 90 PCs
+DefaultAssay(Cervthorlumb_neurons) <- "integrated"
+Cervthorlumb_neurons <- FindNeighbors(Cervthorlumb_neurons, reduction = "pca", dims = 1:90)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 0.5)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 1)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 2)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 4)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 6)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 8)
+Cervthorlumb_neurons <- RunUMAP(Cervthorlumb_neurons, reduction = "pca", dims = 1:90)
+```
+#Assessing first clustering
+```{r}
+#Dimplot for all neurons at 90 PCs grouped by different cluster resolutions, original identity (sample), embryo age (timepoint) and segment (cervical or lumbar)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.0.5", label = T)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.1", label = T) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.2", label = T) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.4", label = T) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.6", label = T)
+DefaultAssay(Cervthorlumb_neurons) <- "RNA"
+FeaturePlot(Cervthorlumb_neurons, features = "Slc17a6", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Slc32a1", order = T)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "orig.ident")
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "timepoint")
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "segment", raster = F)
+DimPlot(Cervthorlumb_neurons_ev, reduction = "umap", group.by = "integrated_snn_res.6", label = T) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.8", label = T) + NoLegend()
+
+DefaultAssay(Cervthorlumb_neurons) <- "RNA"
+FeaturePlot(Cervthorlumb_neurons, features = "Slc17a6", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Slc32a1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Slc5a7", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Onecut1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Zfhx3", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Neurod2", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Nfib", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Avil", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Pirt", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Tlx2", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Sox10", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Sox9", order = T, raster = F)
+FeaturePlot(Cervthorlumb_neurons, features = "Plp1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Olig1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "nCount_RNA", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "nFeature_RNA", order = T)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.6", label = T, raster = F)
+```
+#First subset round, removing obvious DRG neurons,  cluster containing oligo markers, and low nCount clusters. Used initial neurons object integrated by replicate (neurons were removed and then reintegrated amongst replicates), 90PCs.
+```{r}
+
+Cervthorlumb_neurons <- SetIdent(Cervthorlumb_neurons, value = "integrated_snn_res.6")
+Cervthorlumb_neurons
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.6", label = T)
+Cervthorlumb_neurons <- subset(Cervthorlumb_neurons, idents = c(
+0,
+#1, - Oligos
+2,
+#3, - low nCount
+4,
+#5, - low nCount
+6,
+7,
+#8, - low nCount
+9,
+10,
+11,
+12,
+13,
+14,
+15,
+16,
+#17, DRG
+18,
+19,
+20,
+21,
+22,
+23,
+24,
+25,
+26,
+27,
+28,
+29,
+30,
+31,
+32,
+33,
+34,
+35,
+36,
+37,
+38,
+39,
+40,
+41,
+42,
+43,
+44,
+#45, - low nCount
+46,
+47,
+48,
+49,
+50,
+51,
+52,
+53,
+54,
+55,
+56,
+57,
+58,
+59,
+60,
+61,
+62,
+63,
+64,
+65,
+66,
+67,
+68,
+69,
+70,
+71,
+72,
+73,
+74,
+75,
+76,
+77,
+78,
+79,
+80,
+81,
+82,
+#83, DRG
+84,
+85,
+86,
+87,
+88,
+89,
+90,
+91,
+92,
+93,
+94,
+95,
+96,
+97,
+98,
+99,
+100,
+101,
+102,
+103,
+104,
+105,
+106,
+107,
+108,
+109,
+110,
+111,
+112,
+113,
+#114, Oligos
+115,
+116,
+#117, - low nCount
+118,
+119,
+120,
+121,
+122,
+123,
+124,
+125,
+126,
+127,
+128,
+129,
+130,
+131,
+132,
+133,
+134,
+135,
+136,
+137,
+138,
+#139, - low nCount
+140,
+141,
+142))
+Cervthorlumb_neurons
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.6", label = T)
+```
+#Rerun PCA & clustering after subset round one
+```{r}
+#Principal component analysis reporting top 90 PCs
+DefaultAssay(Cervthorlumb_neurons) <- "integrated"
+Cervthorlumb_neurons <- RunPCA(Cervthorlumb_neurons, npcs = 90);
+DimHeatmap(Cervthorlumb_neurons, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 31:45, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 46:60, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 61:75, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 76:90, cells = 500, balanced = TRUE)
+ElbowPlot(Cervthorlumb_neurons, ndims = 90)
+
+#Find clusters and calculate UMAP for 90 PCs
+DefaultAssay(Cervthorlumb_neurons) <- "integrated"
+Cervthorlumb_neurons <- FindNeighbors(Cervthorlumb_neurons, reduction = "pca", dims = 1:90)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 0.5)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 1)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 2)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 4)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 6)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 8)
+Cervthorlumb_neurons <- RunUMAP(Cervthorlumb_neurons, reduction = "pca", dims = 1:90)
+```
+#Assessing second clustering
+```{r}
+#Dimplot for all neurons at 90 PCs grouped by different cluster resolutions, original identity (sample), embryo age (timepoint) and segment (cervical or lumbar)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.0.5", label = T)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.1", label = T) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.2", label = T) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.4", label = T)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.6", label = T)
+DefaultAssay(Cervthorlumb_neurons) <- "RNA"
+FeaturePlot(Cervthorlumb_neurons, features = "Slc17a6", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Slc32a1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Slc5a7", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Zfhx3", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Nfib", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "nCount_RNA", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "nFeature_RNA", order = T)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "orig.ident")
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "timepoint")
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "segment")
+DimPlot(Cervthorlumb_neurons_ev, reduction = "umap", group.by = "integrated_snn_res.6", label = T) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.8", label = T) + NoLegend()
+DefaultAssay(Cervthorlumb_neurons) <- "RNA"
+FeaturePlot(Cervthorlumb_neurons, features = "Slc17a6", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Slc32a1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Slc5a7", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Onecut1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Zfhx3", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Neurod2", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Nfib", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Avil", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Pirt", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Tlx2", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Sox10", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Sox9", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Plp1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Olig1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "nCount_RNA", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "nFeature_RNA", order = T)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.6", label = T)
+```
+#Second subset round, removing low nCount and possible doublets
+```{r}
+
+Cervthorlumb_neurons <- SetIdent(Cervthorlumb_neurons, value = "integrated_snn_res.6")
+Cervthorlumb_neurons
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.6", label = T)
+Cervthorlumb_neurons <- subset(Cervthorlumb_neurons, idents = c(
+0,
+#1, low nCount
+2, 
+3,
+4,
+5,
+6,
+7,
+#8, low nCount
+9,
+10,
+11,
+12,
+13,
+14,
+15,
+16,
+17,
+18,
+19,
+20,
+21,
+22,
+23,
+24,
+25,
+26,
+27,
+28,
+29,
+30,
+31,
+32,
+33,
+34,
+35,
+36,
+37,
+38,
+39,
+40,
+41,
+42,
+43,
+44,
+45,
+46,
+47,
+48,
+49,
+50,
+51,
+52,
+53,
+54,
+55,
+56,
+57,
+58,
+59,
+60,
+61,
+62,
+63,
+64,
+65,
+66,
+67,
+68,
+69,
+70,
+71,
+72,
+73,
+74,
+75,
+76,
+77,
+78,
+79,
+80,
+81,
+82,
+83,
+84,
+85,
+86,
+87,
+88,
+89,
+90,
+91,
+92,
+93,
+94,
+95,
+96,
+97,
+98,
+99,
+100,
+101,
+102,
+103,
+104,
+105,
+106,
+107,
+108,
+109,
+110,
+111,
+112,
+113,
+114,
+115,
+116,
+117,
+118,
+119,
+120,
+121,
+122,
+123,
+#124, low nCount
+#125, possible doublets
+126,
+127,
+128,
+129,
+130,
+131,
+132,
+133,
+134,
+135,
+136,
+137))
+Cervthorlumb_neurons
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.6", label = T)
+```
+#Rerun PCA & clustering after subset round two
+```{r}
+#Principal component analysis reporting top 90 PCs
+DefaultAssay(Cervthorlumb_neurons) <- "integrated"
+Cervthorlumb_neurons <- RunPCA(Cervthorlumb_neurons, npcs = 90);
+DimHeatmap(Cervthorlumb_neurons, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 31:45, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 46:60, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 61:75, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb_neurons, dims = 76:90, cells = 500, balanced = TRUE)
+ElbowPlot(Cervthorlumb_neurons, ndims = 90)
+#Find clusters and calculate UMAP for 90 PCs
+DefaultAssay(Cervthorlumb_neurons) <- "integrated"
+Cervthorlumb_neurons <- FindNeighbors(Cervthorlumb_neurons, reduction = "pca", dims = 1:90)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 0.5)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 1)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 2)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 4)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 6)
+Cervthorlumb_neurons <- FindClusters(Cervthorlumb_neurons, resolution = 8)
+Cervthorlumb_neurons <- RunUMAP(Cervthorlumb_neurons, reduction = "pca", dims = 1:90)
+```
+#Assessing third clustering. Third version of spinal neuron object; used hereafter
+```{r}
+#Dimplot for all neurons at 90 PCs grouped by different cluster resolutions, original identity (sample), embryo age (timepoint) and segment (cervical or lumbar)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.0.5", label = T)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.1", label = T) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.2", label = T) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.4", label = T) + NoLegend()
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.6", label = T)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "integrated_snn_res.8", label = T)
+DefaultAssay(Cervthorlumb_neurons) <- "RNA"
+FeaturePlot(Cervthorlumb_neurons, features = "Slc17a6", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Slc32a1", order = T)
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "orig.ident")
+DimPlot(Cervthorlumb_neurons, reduction = "umap", group.by = "segment")
+
+DefaultAssay(Cervthorlumb_neurons) <- "RNA"
+FeaturePlot(Cervthorlumb_neurons, features = "Fshr", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Defa29", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Gm27246", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Gm5083", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Krt71", order = T)
+
+FeaturePlot(Cervthorlumb_neurons, features = "Slc17a6", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Slc32a1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Slc5a7", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Sox2", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Onecut1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Zfhx3", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Neurod2", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Nfib", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "nCount_RNA", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "nFeature_RNA", order = T)
+
+FeaturePlot(Cervthorlumb_neurons, features = "Onecut1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Zfhx3", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Neurod2", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Nfib", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Barhl1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Foxd3", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Isl1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Lmx1b", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Evx1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Vsx2", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Sim1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Tfap2b", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Dmrt3", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Gata3", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "En1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Pkd2l1", order = T)
+FeaturePlot(Cervthorlumb_neurons, features = "Sox2", order = T)
+
+FeaturePlot(Cervthorlumb_neurons, features = "Zic5", order = T, raster = F)
+FeaturePlot(Cervthorlumb_neurons, features = "Zic2", order = T, raster = F)
+FeaturePlot(Cervthorlumb_neurons, features = "Zic3", order = T, raster = F)
+FeaturePlot(Cervthorlumb_neurons, features = "Zic4", order = T, raster = F)
+FeaturePlot(Cervthorlumb_neurons, features = "Zic1", order = T, raster = F)
+FeaturePlot(Cervthorlumb_neurons, features = "Pax2", order = T, raster = F)
+FeaturePlot(Cervthorlumb_neurons, features = "Tfap2b", order = T, raster = F)
+FeaturePlot(Cervthorlumb_neurons, features = "Satb2", order = T, raster = F)
+```
+
+```{r}
+#For now, we will keep this size object, and this will be the version loaded in the future.
+#Save neurons object - currently saved post subset
+saveRDS(Cervthorlumb_neurons, "/Users/roomerb/cervthorlumb_neurons_post.RDS")
+```
