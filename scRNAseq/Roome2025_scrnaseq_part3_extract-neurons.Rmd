@@ -1,0 +1,436 @@
+
+```{r}
+library(Seurat)
+library(tidyverse)
+
+#Load RDS file of all E14.5, E16.5 Cervical, E16.5 Thoracic and E16.5 Lumbar integrated data
+Cervthorlumb <- readRDS("/Users/roomerb/Desktop/Temp/cervthorlumb_all.RDS")
+```
+
+```{r}
+#Check current metadata entries
+Cervthorlumb@meta.data
+table(Cervthorlumb$orig.ident)
+
+#Add timepoint metadata
+Cervthorlumb$timepoint <- plyr::mapvalues(
+    x = Cervthorlumb$orig.ident, 
+    from = c("A14", "B14", "C14", "D14", "E14", "F14", "A16", "C16", "D16", "E16", "F16", "G16", "H16", "LA16", "LB16", "LC16", "LD16", "LE16", "LF16", "LG16", "LH16", "TA16", "TB16", "16TC", "16TD", "TE16", "TF16", "TG16", "TH16"), 
+    to = c("E14", "E14", "E14", "E14", "E14", "E14", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16", "E16"))
+
+#Add segment metadata
+Cervthorlumb$segment <- plyr::mapvalues(
+    x = Cervthorlumb$orig.ident, 
+    from = c("A14", "B14", "C14", "D14", "E14", "F14", "A16", "C16", "D16", "E16", "F16", "G16", "H16", "LA16", "LB16", "LC16", "LD16", "LE16", "LF16", "LG16", "LH16", "TA16", "TB16", "16TC", "16TD", "TE16", "TF16", "TG16", "TH16"),
+    to = c("Cervical", "Cervical", "Cervical", "Cervical", "Cervical", "Cervical", "Cervical", "Cervical", "Cervical", "Cervical", "Cervical", "Cervical", "Cervical", "Lumbar", "Lumbar", "Lumbar", "Lumbar", "Lumbar", "Lumbar", "Lumbar", "Lumbar", "Thoracic", "Thoracic", "Thoracic", "Thoracic", "Thoracic", "Thoracic", "Thoracic", "Thoracic"))
+```
+
+```{r}
+#Show PC heatmaps calculated in Biowulf
+DimHeatmap(Cervthorlumb, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb, dims = 31:45, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb, dims = 46:60, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb, dims = 61:75, cells = 500, balanced = TRUE)
+DimHeatmap(Cervthorlumb, dims = 76:90, cells = 500, balanced = TRUE)
+```
+
+```{r}
+#Produce clusters and UMAP for 90 PCs (PCA done in HPC)
+DefaultAssay(Cervthorlumb) <- "integrated";
+Cervthorlumb <- FindNeighbors(Cervthorlumb, reduction = "pca", dims = 1:90)
+Cervthorlumb <- FindClusters(Cervthorlumb, resolution = 2)
+Cervthorlumb <- RunUMAP(Cervthorlumb, reduction = "pca", dims = 1:90)
+
+#UMAP Dimplot. Resolution 2 will be used for FindMarkers to determine cluster identity. 
+
+Cervthorlumb <- SetIdent(Cervthorlumb, value = "integrated_snn_res.2")
+DimPlot(Cervthorlumb, reduction = "umap", label = T, raster = FALSE)
+DimPlot(Cervthorlumb, reduction = "umap", label = T, group.by = "segment", raster = FALSE)
+```
+
+```{r}
+#Run on hpc - task 1:
+#Cluster identity by FindAllMarkers (run on hpc, code marked by ##)
+
+####! /bin/bash
+
+##module load R
+
+##R --no-save
+
+##Rscript -e '
+
+##library(Seurat);
+##library(presto);
+
+##Cervthorlumb <- readRDS("/data/roomerb/seurat/cervthorlumb_all.RDS");
+
+###Cluster using 90PC integrated assay, resolution 2
+##DefaultAssay(Cervthorlumb) <- "integrated";
+##Cervthorlumb <- FindNeighbors(Cervthorlumb, reduction = "pca", dims = 1:90)
+##Cervthorlumb <- FindClusters(Cervthorlumb, resolution = 2)
+##Cervthorlumb <- RunUMAP(Cervthorlumb, reduction = "pca", dims = 1:90)
+
+###FindAllMarkers, Integrated res 2
+##DefaultAssay(Cervthorlumb) <- "RNA";
+##Cervthorlumb <- SetIdent(Cervthorlumb, value = "integrated_snn_res.2");
+##Cervthorlumb_r2_allmarkers <- FindAllMarkers(Cervthorlumb, min.pct = 0.005);
+##write.csv(Cervthorlumb_r2_allmarkers, "/data/roomerb/Cervthorlumb_r2_allmarkers.csv")'
+```
+
+```{r}
+#Examination of cluster markers for annotations
+DefaultAssay(Cervthorlumb) <- "RNA"
+FeaturePlot(Cervthorlumb, features = "Ebf1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "nFeature_RNA", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Nfib", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Zfhx3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Tubb3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "nCount_RNA", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Sox2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Plp1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Sox10", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Tlx2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Car2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Foxc1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Twist1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Col1a2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Meox1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Foxj1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Gfap", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Sox9", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Ascl1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Olig3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Nkx6-1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Isl2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Avil", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Pirt", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Rbfox3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Slc17a6", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Slc32a1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Slc5a7", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Isl1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Olig2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Cspg4", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Plp1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Mbp", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Sox9", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Sox10", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Gfap", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Vim", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Olig1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Olig2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Cspg4", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Sox5", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Sox6", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Sox8", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Sox9", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Sox10", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Pax3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Pax7", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Gsx1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Gsx2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Olig3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Ascl1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Ptf1a", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Dbx1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Dbx2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Neurog3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Atoh1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Neurog1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Egfr", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Dll1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Dll4", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Jag1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Aqp4", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Gfap", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Aldh1a1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "S100b", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Aldoc", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "nFeature_RNA", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Rbfox3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Tubb3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Slc17a6", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Slc32a1", order = T, raster = FALSE)
+Cervthorlumb <- SetIdent(Cervthorlumb, value = "integrated_snn_res.0.5")
+DimPlot(Cervthorlumb, reduction = "umap", label = T, raster = FALSE)
+
+#Floorplate
+FeaturePlot(Cervthorlumb, features = "Arx", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Shh", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Sulf1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Ntn1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Tm4sf1", order = T, raster = FALSE)
+#Roofplate
+FeaturePlot(Cervthorlumb, features = "Lmx1a", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Ecrg4", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Gdf10", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Msx1", order = T, raster = FALSE)
+#Ependyma
+FeaturePlot(Cervthorlumb, features = "Foxj1", order = T, raster = FALSE)
+#Platelet & Endothelial
+FeaturePlot(Cervthorlumb, features = "Pecam1", order = T)
+#Smooth Muscle
+FeaturePlot(Cervthorlumb, features = "Myh11", order = T)
+FeaturePlot(Cervthorlumb, features = "Cnn2", order = T)
+FeaturePlot(Cervthorlumb, features = "Pdgfrb", order = T)
+FeaturePlot(Cervthorlumb, features = "Acta2", order = T)
+FeaturePlot(Cervthorlumb, features = "Anpep", order = T)
+FeaturePlot(Cervthorlumb, features = "Mcam", order = T)
+#Microglia
+FeaturePlot(Cervthorlumb, features = "Cd68", order = T)
+FeaturePlot(Cervthorlumb, features = "Aif1", order = T)
+#Boundary Cap Cells
+FeaturePlot(Cervthorlumb, features = "Egr2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Cxcr4", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Wif1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Abcc9", order = T, raster = FALSE)
+
+
+FeaturePlot(Cervthorlumb, features = "Pdgfra", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Olig1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Olig2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Cdh5", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Ccr2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Ms4a1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Cd8a", order = T, raster = FALSE)
+
+FeaturePlot(Cervthorlumb, features = "Egfr", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Ascl1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Olig2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Pax3", order = T, raster = FALSE)
+
+FeaturePlot(Cervthorlumb, features = "Hmgb2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Hopx", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Aqp4", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Vim", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Gfap", order = T, raster = FALSE)
+
+FeaturePlot(Cervthorlumb, features = "Id3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Bmpr1b", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Dbx2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Pax6", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Irx3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Nkx6-1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Cd14", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Gnly", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Cst3", order = T, raster = FALSE)
+
+FeaturePlot(Cervthorlumb, features = "Cspg4", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Pdgfra", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Sox2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Nkx6-1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Gsx1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Gsx2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Tfap2e", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Ptf1a", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Robo3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Rbfox3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Shisa8", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Zic1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Zic4", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Zic3", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Zic2", order = T, raster = FALSE)
+
+FeaturePlot(Cervthorlumb, features = "Hba-a2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Hba-a1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Mbp", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Mag", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Mog", order = T, raster = FALSE)
+
+FeaturePlot(Cervthorlumb, features = "S100a4", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Ms4a7", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Ppbp", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Il7r", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Cd14", order = T, raster = FALSE)
+
+FeaturePlot(Cervthorlumb, features = "S100a6", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Lama1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Lama2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Aldh1a2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Crabp2", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Mgp", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Fxyd5", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Col1a1", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Top2a", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Cenpa", order = T, raster = FALSE)
+FeaturePlot(Cervthorlumb, features = "Cenpf", order = T, raster = FALSE)
+```
+
+
+```{r}
+#Add main cell-type annotations to $maintypes metadata based on the identity of resolution 0.5 clusters from FindMarkers.
+Cervthorlumb$maintypes <- plyr::mapvalues(
+    x = Cervthorlumb$integrated_snn_res.2,
+    from = c(85,32, 81, 2, 60,
+             65, 25, 54, 82, 43,
+             79, 57, 41, 90 ,11,
+             6, 36,30,17,77,
+             21,84,1,3,64,
+             28,7,86,56,42,
+             27,48,18,80,20,
+             5,50,29,89,91,
+             8,15,87,12,51,10,23,62,35,67,76,37,33,39,38,4,45,9,63,46,73,13,19,61,69,68,58,88,24,26,72,22,16,49,47,31,0,92,14,52,44,71,53,34,70,66,59,93,55,40,75,74,78,83), 
+    to = c("Proliferating Smooth Muscle","Smooth Muscle", "Oligodendrocytes", "Immature Oligodendrocytes", "Immature Oligodendrocytes",
+           "Immature Oligodendrocytes", "Immature Oligodendrocytes", "Immature Oligodendrocytes", "Schwann & Boundary Cap Cells", "Schwann & Boundary Cap Cells",
+           "Proliferating Meningeal", "Dural Fibroblasts", "Pial/Arachnoid Fibroblasts", "Pial/Arachnoid Fibroblasts", "Pial/Arachnoid Fibroblasts",
+           "Pial/Arachnoid Fibroblasts", "Floor Plate", "Erythrocytes and low-nCount", "Erythrocytes and low-nCount", "Erythrocytes and low-nCount",
+           "Ependymal", "Ependymal", "Astrocytes/Progenitors", "Astrocytes/Progenitors", "Astrocytes/Progenitors",
+           "Astrocytes/Progenitors", "Astrocytes/Progenitors", "Astrocytes/Progenitors", "Astrocytes/Progenitors","Roof Plate",
+           "Astrocytes/Progenitors","Astrocytes/Progenitors","Astrocytes/Progenitors", "Endothelial cells", "Endothelial cells",
+           "Endothelial cells", "Microglia", "Microglia","Leukocytes", "Platelets",
+           "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "Spinal neurons", "DRG neurons", "Spinal neurons", "Spinal neurons", "Neural progenitors", "Spinal neurons"))
+DimPlot(Cervthorlumb, reduction = "umap", label = T, group.by = "integrated_snn_res.2", raster = FALSE) + NoLegend()
+DimPlot(Cervthorlumb, reduction = "umap", group.by = "maintypes", label = T, raster = FALSE) + NoLegend()
+DimPlot(Cervthorlumb, reduction = "umap", group.by = "timepoint", label = T, raster = FALSE) + NoLegend()
+DimPlot(Cervthorlumb, reduction = "umap", group.by = "segment", label = T, raster = FALSE) + NoLegend()
+DimPlot(Cervthorlumb, reduction = "umap", group.by = "orig.ident", label = T, raster = FALSE) + NoLegend()
+#DeSisto/Siegenthaler2020 - Dev Cell (Meninges markers E14.5)
+#Coulpier/Topilko2009 - Glia (Boundary cap cell markers)
+```
+
+```{r}
+#Save annotated seurat object
+saveRDS(Cervthorlumb,"/Users/roomerb/cervthorlumb_all_anno.RDS")
+```
+
+```{r}
+#Run on hpc - task 2:
+#Annotated cell identity by FindAllMarkers (run on hpc, code marked by ##)
+
+####! /bin/bash
+
+##module load R
+
+##R --no-save
+
+##Rscript -e '
+
+##library(Seurat);
+##library(presto);
+
+##Cervthorlumb <- readRDS("/data/roomerb/seurat/cervthorlumb_all_anno.RDS");
+
+###FindAllMarkers, maintypes annotation
+##DefaultAssay(Cervthorlumb) <- "RNA";
+##Cervthorlumb <- SetIdent(Cervthorlumb, value = "maintypes");
+##Cervthorlumb_allmarkers <- FindAllMarkers(Cervthorlumb, min.pct = 0.005);
+##write.csv(Cervthorlumb_allmarkers, "/data/roomerb/Cervthorlumb_allmarkers.csv")'
+
+#Include in supplemental table
+```
+
+
+```{r}
+#UMAP Dimplots of cells by type, segment, replicate and timepoint
+
+pdf(file = "/Users/roomerb/RoomeE14_E16_allcells_maintypes.pdf", height = 10, width = 12)
+DimPlot(Cervthorlumb, reduction = "umap", group.by = "maintypes", label = F, raster = FALSE) + NoLegend() + labs(title = NULL)
+dev.off()
+
+pdf(file = "/Users/roomerb/RoomeE14_E16_allcells_segment.pdf", height = 10, width = 14)
+DimPlot(Cervthorlumb, reduction = "umap", group.by = "segment", label = F, raster = FALSE) + labs(title = NULL)
+dev.off()
+
+pdf(file = "/Users/roomerb/RoomeE14_E16_allcells_sample.pdf", height = 10, width = 15)
+DimPlot(Cervthorlumb, reduction = "umap", group.by = "orig.ident", label = F, raster = FALSE) + labs(title = NULL)
+dev.off()
+
+pdf(file = "/Users/roomerb/RoomeE14_E16_allcells_timepoint.pdf", height = 10, width = 14)
+DimPlot(Cervthorlumb, reduction = "umap", group.by = "timepoint", label = F, raster = FALSE) + labs(title = NULL)
+dev.off()
+```
+
+```{r}
+#Prepare for Dotplot
+
+Cervthorlumb <- SetIdent(Cervthorlumb, value = "maintypes")
+my_levels <- c("DRG neurons",
+"Spinal neurons",
+"Neural progenitors",
+"Astrocytes/Progenitors",
+"Roof Plate",
+"Ependymal",
+"Floor Plate",
+"Immature Oligodendrocytes",
+"Oligodendrocytes",
+"Schwann & Boundary Cap Cells",
+"Proliferating Smooth Muscle",
+"Smooth Muscle and Pericytes",
+"Pial/Arachnoid Fibroblasts",
+"Dural Fibroblasts",
+"Proliferating Meningeal",
+"Microglia",
+"Leukocytes",
+"Endothelial cells",
+"Platelets",
+"Erythrocytes and low-nCount")
+
+# Re-level object@ident
+Cervthorlumb@active.ident <- factor(x = Cervthorlumb@active.ident, levels = my_levels)
+
+#Dotplot for Main cell types
+neuron_features <- rev(c(
+#DRG
+"Tlx2", "Avil",
+#Neurons
+"Slc17a6", "Slc32a1", "Rbfox3", "Tubb3",
+#Neural progenitors
+"Neurod4", "Nhlh1",
+#Astrocytes Progenitors
+"Gfap", "Aqp4", "Sox2",
+#Roofplate
+"Lmx1a", "Gdf10",
+#Ependyma
+"Foxj1", 
+#Floorplate
+"Arx", "Shh",
+#Immature Oligodendrocytes
+"Pdgfra", "Sox9",
+#Oligodendrocytes
+"Mbp",
+#Schwann and Boundary Cap
+"Plp1", "Sox10", "Prss56", "Egr2",
+#Prolif Smooth Muscle (and other prolif)
+"Mki67",
+#Smooth Muscle
+"Pdgfrb", "Abcc9",
+#Meningeal
+"Col1a1",
+#Pial/Arachnoid
+"Aldh1a2", "Lama1",
+#Dural
+"Fxyd5", "Mgp",
+#Prolif Fibroblasts
+# (see Top2a above)
+#Microglia
+"Cd68", "Aif1",
+#Leukocytes
+"Cd52", "Cd79a",
+#Endothelial
+"Cldn5", "Cdh5",
+#Platelets
+"Gp9", "Ppbp",
+#Erythrocytes
+"Hba-a1", "Hba-a2"))
+```
+ 
+```{r}
+#Output dotplot for Fig.1 Supplementals
+#Cervthorlumb <- SetIdent(Cervthorlumb, value = "maintypes")
+pdf(file = "/Users/roomerb/e14-16_allcells_dotplot.pdf", height = 5, width = 12)
+DotPlot(Cervthorlumb, assay = "RNA", features = neuron_features)+theme(axis.text.x = element_text(angle = 40, vjust = 1, hjust=1, size = 10))+ theme(axis.line  = element_blank())+ylab('') +scale_colour_gradient2(low = "#FFFFFF", high = "#000000") + theme(axis.ticks = element_blank())+geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=NA)+theme(axis.text.y = element_text(size = 10))
+dev.off()
+```
+
+```{r}
+#Run on hpc - task 3:
+
+##Extraction of neurons object (Cervthorlumb_neurons) from all cells object (Cervthorlumb); done on Biowulf due to insufficient ram
+#Cervthorlumb <- SetIdent(Cervthorlumb, value = "integrated_snn_res.2")
+#Cervthorlumb_neurons <- subset(Cervthorlumb, idents = c(8,15,87,12,51,10,23,62,35,67,76,37,33,39,38,4,45,9,63,46,73,13,19,61,69,68,58,88,24,26,72,22,16,49,47,31,0,92,14,52,44,71,53,34,70,66,59,93,55,40,75,74,78,83))
+##Export neurons Seurat object for future processing
+#saveRDS(Cervthorlumb_neurons,"/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/Cervthorlumb_neurons.RDS")
+```
+
