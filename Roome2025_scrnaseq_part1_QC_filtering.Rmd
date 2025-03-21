@@ -91,6 +91,8 @@ DimPlot(EF14, reduction = "umap", label = T)
 saveRDS(AB14, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic spinal cord/14AB_all.RDS")
 saveRDS(CD14, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic spinal cord/14CD_all.RDS")
 saveRDS(EF14, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic spinal cord/14EF_all.RDS")
+
+rm(A14.data,B14.data,C14.data,D14.data,E14.data,F14.data)
 ```
 
 ```{r}
@@ -111,6 +113,7 @@ dev.off()
 pdf(file = "/Users/roomerb/QC_post_mt.pdf", height = 6, width = 4)
 VlnPlot(AB14, features = "percent.mt.ab", y.max = 65)
 dev.off()
+rm(AB14, CD14, EF14)
 ```
 
 
@@ -184,6 +187,9 @@ DimPlot(EF16, reduction = "umap", label = T)
 saveRDS(A16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic spinal cord/16A_all.RDS")
 saveRDS(CD16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic spinal cord/16CD_all.RDS")
 saveRDS(EF16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic spinal cord/16EF_all.RDS")
+
+rm(A16.data,C16.data,D16.data,E16.data,F16.data)
+rm(A16,CD16,EF16)
 ```
 
 ```{r}
@@ -229,6 +235,7 @@ FeaturePlot(TAB16, features = "nCount_RNA", order = T)
 
 #Save E16.5 thoracic filtered data as combined biological replicates (1st thoracic replicate)
 saveRDS(TAB16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/16TATB_all.RDS")
+rm(TA16.data,TB16.data,TAB16)
 ```
 
 ```{r}
@@ -285,6 +292,7 @@ FeaturePlot(TCD16, features = "Nfib", order = T)
 
 #Save E16.5 thoracic filtered data as combined biological replicates (2nd thoracic replicate)
 saveRDS(TCD16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/16TCTD_all.RDS")
+rm(TC16.data,TD16.data,TCD16)
 ```
 
 ```{r}
@@ -380,6 +388,7 @@ DimPlot(TF16, reduction = "umap", group.by = "orig.ident", label = T)+NoLegend()
 #Save E16.5 thoracic filtered data as separate technical replicates (3rd thoracic replicate)
 saveRDS(TE16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/16TE_all.RDS")
 saveRDS(TF16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/16TF_all.RDS")
+rm(TE16.data,TF16.data,TE16,TF16)
 ```
 
 ```{r}
@@ -436,6 +445,7 @@ FeaturePlot(TGH16, features = "Slc5a7", order = T)
 ```{r}
 #Save E16.5 thoracic filtered data as combined biological replicates (4th thoracic replicate)
 saveRDS(TGH16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/16TGTH_all.RDS")
+rm(TG16.data,TH16.data,TGH16)
 ```
 
 ```{r}
@@ -541,6 +551,8 @@ saveRDS(GH16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic spinal cor
 saveRDS(LALB16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic spinal cord/16LALB_all.RDS")
 saveRDS(LCLD16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic spinal cord/16LCLD_all.RDS")
 saveRDS(LELF16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic spinal cord/16LELF_all.RDS")
+rm(G16.data,H16.data,LA16.data,LB16.data,LC16.data,LD16.data,LE16.data,LF16.data)
+rm(GH16,LALB16,LCLD16,LELF16)
 ```
 
 ```{r}
@@ -595,5 +607,7 @@ FeaturePlot(LGH16, features = "Slc5a7", order = T)
 
 #Save E16.5 lumbosacral filtered data as combined biological replicates (4th lumbosacral replicate)
 saveRDS(LGH16, "/Users/roomerb/Documents/Experiments/RNA-Seq/Embryonic_spinal_cord/Seurat_Objects/16LGLH_all.RDS")
+rm(LG16.data,LH16.data)
+rm(LGH16)
 ```
 
