@@ -30,4 +30,4 @@ Prior to these steps, 30 replicate 10X Chromium 3' GEX runs from cervical, thora
 - Cluster identities are examined using FeaturePlot for top DEGs of each cluster.
 - Main spinal cord cell types assigned to $maintypes metadata category from resolution 2 clusters. Cluster markers are rerun using $maintypes on hpc cluster. (commented code)
 - Visualizations (VlnPlot, DotPlots) are exported to report processing.
-- Clusters identified as spinal cord neurons are subsetted from all neurons ('Cervthorlumb_neurons') on hpc cluster and saved (commented code).
+- Clusters identified as spinal cord neurons are subsetted from all neurons ('Cervthorlumb_neurons') on hpc cluster, data scaling and PCA (90) are run, and saved (commented code).
