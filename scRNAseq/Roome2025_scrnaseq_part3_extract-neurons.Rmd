@@ -26,7 +26,7 @@ Cervthorlumb$segment <- plyr::mapvalues(
 ```
 
 ```{r}
-#Show PC heatmaps calculated in Biowulf
+#Show PC heatmaps calculated in hpc
 DimHeatmap(Cervthorlumb, dims = 1:15, cells = 500, balanced = TRUE)
 DimHeatmap(Cervthorlumb, dims = 16:30, cells = 500, balanced = TRUE)
 DimHeatmap(Cervthorlumb, dims = 31:45, cells = 500, balanced = TRUE)

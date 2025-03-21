@@ -1,6 +1,6 @@
 
 ```{r}
-#Run as bash script on cluster; non-R code is commented
+#Run as bash script on hpc; non-R code is commented
 ##! /bin/bash
 #module load R
 #R --no-save
